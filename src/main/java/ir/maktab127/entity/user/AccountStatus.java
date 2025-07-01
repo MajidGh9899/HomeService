@@ -1,4 +1,7 @@
 package ir.maktab127.entity.user;
 
-public class AccountStatus {
+public enum AccountStatus {
+NEW,
+PENDING,
+APPROVED
 }

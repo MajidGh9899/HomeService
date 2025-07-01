@@ -1,4 +1,9 @@
 package ir.maktab127.entity.user;
 
-public class Customer {
+import jakarta.persistence.Entity;
+import lombok.NoArgsConstructor;
+
+@Entity
+@NoArgsConstructor
+public class Customer extends User{
 }

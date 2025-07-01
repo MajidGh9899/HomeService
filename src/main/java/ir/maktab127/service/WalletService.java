@@ -1,4 +1,17 @@
 package ir.maktab127.service;
 
-public class WalletService {
+import ir.maktab127.entity.Wallet;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+public interface WalletService {
+    Wallet save(Wallet wallet);
+    Optional<Wallet> findById(Long id);
+    Optional<Wallet> findByUserId(Long userId);
+    List<Wallet> getAll();
+    void delete(Long id);
+    void depositToSpecialist(Long specialistId, BigDecimal amount);
+    void withdrawFromCustomer(Long customerId, BigDecimal amount);
 }
