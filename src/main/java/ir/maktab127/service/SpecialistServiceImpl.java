@@ -81,7 +81,7 @@ public class SpecialistServiceImpl implements SpecialistService {
 
     @Override
     public Proposal submitProposal(Long specialistId, Long orderId, Proposal proposal) {
-      
+
         if (!canSubmitProposal(specialistId, orderId)) {
             throw new IllegalStateException("Specialist cannot submit proposal for this order");
         }
