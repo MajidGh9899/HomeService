@@ -9,6 +9,7 @@ import ir.maktab127.service.CustomerService;
 import ir.maktab127.service.OrderService;
 import ir.maktab127.service.ServiceCategoryService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,18 +22,14 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/customer")
 @Validated
+@RequiredArgsConstructor
 public class CustomerController {
+
     private final CustomerService customerService;
     private final ServiceCategoryService serviceCategoryService;
     private final OrderService orderService;
     private final CommentService commentService;
-    @Autowired
-    public CustomerController(CustomerService customerService, CommentService commentService, ServiceCategoryService serviceCategoryService, OrderService orderService) {
-        this.customerService = customerService;
-        this.commentService = commentService;
-        this.serviceCategoryService = serviceCategoryService;
-        this.orderService = orderService;
-    }
+
     @PostMapping("/register")
     public ResponseEntity<CustomerResponseDto> register(@Valid @RequestBody CustomerRegisterDto dto) {
         Customer customer = CustomerMapper.toEntity(dto);
@@ -81,10 +78,10 @@ public class CustomerController {
     }
     //payOrder
     @PutMapping("pay/{orderId}/{SpecialistId}")
-    public ResponseEntity<Void> payOrder(@PathVariable Long orderId, @PathVariable Long specialistId) {
+    public ResponseEntity<Void> payOrder(@PathVariable Long orderId, @PathVariable Long SpecialistId) {
         try {
             orderService.completedOrder(orderId);
-            orderService.payToSpecialist(orderId, specialistId);
+            orderService.payToSpecialist(orderId, SpecialistId);
             return ResponseEntity.ok().build();
 
 

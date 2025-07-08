@@ -2,9 +2,7 @@ package ir.maktab127.entity;
 
 import ir.maktab127.entity.baseEntity.BaseEntity;
 import ir.maktab127.entity.user.Specialist;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,8 +27,13 @@ public class Proposal extends BaseEntity<Long> {
     private LocalDateTime proposedStartTime;
 
     @Column(nullable = false)
-    private Integer durationInHours;
+    private LocalDateTime endDate;
 
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private ProposalStatus status;
+
+
+    private String description;
 }

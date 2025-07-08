@@ -56,7 +56,7 @@ public class ProposalServiceImpl implements ProposalService {
 
         // فقط اگر سفارش در گروه خدمات متخصص باشد
         boolean allowed = specialist.getServiceCategories().stream()
-                .anyMatch(sc -> sc.getId().equals(order.getService().getId()));
+                .anyMatch(sc -> sc.getId().equals(order.getService().getId()));//query
         if (!allowed) throw new IllegalStateException("Specialist not allowed for this order's service");
 
         Proposal proposal = new Proposal();

@@ -63,7 +63,7 @@ public class SpecialistServiceImpl implements SpecialistService {
         boolean hasActiveOrder = orderRepository.findAll().stream()
                 .anyMatch(order -> order.getSpecialist() != null
                         && order.getSpecialist().getId().equals(specialistId)
-                        && order.getStatus() == OrderStatus.IN_PROGRESS);
+                        && order.getStatus() == OrderStatus.IN_PROGRESS);//query
 
         if (hasActiveOrder) {
             throw new IllegalStateException("Specialist has active work and cannot update info now.");

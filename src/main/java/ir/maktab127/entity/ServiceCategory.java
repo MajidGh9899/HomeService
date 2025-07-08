@@ -19,7 +19,7 @@ import java.util.List;
 public class ServiceCategory extends BaseEntity< Long> {
 
 
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String name;
 
     @Column(nullable = false)

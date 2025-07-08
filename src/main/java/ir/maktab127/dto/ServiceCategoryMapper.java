@@ -13,12 +13,12 @@ public class ServiceCategoryMapper {
         dto.setParentName(service.getParent() != null ? service.getParent().getName() : null);
         return dto;
     }
-    public static ServiceCategory toEntity(ServiceCategoryRegisterDto dto, ServiceCategory parent) {
+    public static ServiceCategory toEntity(ServiceCategoryRegisterDto dto) {
         ServiceCategory service = new ServiceCategory();
         service.setName(dto.getName());
         service.setBasePrice(dto.getBasePrice());
         service.setDescription(dto.getDescription());
-        service.setParent(parent);
+        service.setParent( );
         return service;
     }
 }

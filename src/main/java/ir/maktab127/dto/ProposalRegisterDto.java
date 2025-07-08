@@ -7,20 +7,26 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 public class ProposalRegisterDto {
-    @NotNull
-    private Long specialistId;
-    @NotNull
+    @NotNull(message = "Order ID is required")
     private Long orderId;
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = true)
+
+    @NotNull(message = "Specialist ID is required")
+    private Long specialistId;
+
+    @NotNull(message = "Proposed price is required")
+    @DecimalMin(value = "0.01", message = "Proposed price must be greater than 0")
     private BigDecimal proposedPrice;
-    @NotNull
-    private String proposedStartTime; // ISO string
-    @NotNull
-    @Min(1)
-    private Integer durationInHours;
+
+    @NotNull(message = "Start date is required")
+    private LocalDateTime startDate;
+
+    @NotNull(message = "End date is required")
+    private LocalDateTime endDate;
+
+    private String description;
 }
