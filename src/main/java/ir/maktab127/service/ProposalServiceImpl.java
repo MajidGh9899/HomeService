@@ -63,8 +63,8 @@ public class ProposalServiceImpl implements ProposalService {
         proposal.setSpecialist(specialist);
         proposal.setOrder(order);
         proposal.setProposedPrice(dto.getProposedPrice());
-        proposal.setProposedStartTime(LocalDateTime.parse(dto.getProposedStartTime()));
-        proposal.setDurationInHours(dto.getDurationInHours());
+        proposal.setProposedStartTime(LocalDateTime.parse(dto.getStartDate()  + "T00:00:00"));
+        proposal.setEndDate(LocalDateTime.parse(dto.getEndDate() + "T00:00:00"));
         proposal.setCreatedAt(LocalDateTime.now());
         return proposalRepository.save(proposal);
     }

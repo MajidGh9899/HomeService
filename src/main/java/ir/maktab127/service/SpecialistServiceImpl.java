@@ -1,11 +1,15 @@
 package ir.maktab127.service;
 
 import ir.maktab127.dto.SpecialistUpdateDto;
+import ir.maktab127.entity.Order;
 import ir.maktab127.entity.OrderStatus;
+import ir.maktab127.entity.Proposal;
 import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.repository.OrderRepository;
+import ir.maktab127.repository.ProposalRepository;
 import ir.maktab127.repository.SpecialistRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,15 +17,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 @Service
+@RequiredArgsConstructor
 public class SpecialistServiceImpl implements SpecialistService {
     private final SpecialistRepository specialistRepository;
     private final OrderRepository orderRepository;
+    private final ProposalRepository proposalRepository;
 
-@Autowired
-    public SpecialistServiceImpl(SpecialistRepository specialistRepository, OrderRepository orderRepository) {
-        this.specialistRepository = specialistRepository;
-        this.orderRepository = orderRepository;
-    }
+
+
 
     @Override
     public Specialist register(Specialist specialist) {
@@ -74,5 +77,58 @@ public class SpecialistServiceImpl implements SpecialistService {
         specialist.setProfileImagePath(dto.getProfileImagePath());
         specialist.setStatus(AccountStatus.PENDING);
         specialistRepository.save(specialist);
+    }
+
+    @Override
+    public Proposal submitProposal(Long specialistId, Long orderId, Proposal proposal) {
+      
+        if (!canSubmitProposal(specialistId, orderId)) {
+            throw new IllegalStateException("Specialist cannot submit proposal for this order");
+        }
+
+
+        proposal.setCreatedAt(LocalDateTime.now());
+
+
+        return proposalRepository.save(proposal);
+    }
+
+    @Override
+    public List<Order> getAvailableOrdersForSpecialist(Long specialistId) {
+
+        return orderRepository.findByStatusIn(List.of(
+                OrderStatus.WAITING_FOR_PROPOSAL,
+                OrderStatus.WAITING_FOR_SPECIALIST_SELECTION
+        ));
+    }
+
+    @Override
+    public List<Proposal> getSpecialistProposals(Long specialistId) {
+        return proposalRepository.findBySpecialistId(specialistId);
+    }
+
+    @Override
+    public boolean canSubmitProposal(Long specialistId, Long orderId) {
+        // check if specialist exists and is approved
+        Optional<Specialist> specialistOpt = specialistRepository.findById(specialistId);
+        if (specialistOpt.isEmpty() || specialistOpt.get().getStatus() != AccountStatus.APPROVED) {
+            return false;
+        }
+
+        // check if order exists and is in correct status
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) {
+            return false;
+        }
+
+        Order order = orderOpt.get();
+        if (order.getStatus() != OrderStatus.WAITING_FOR_PROPOSAL &&
+                order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_SELECTION) {
+            return false;
+        }
+
+        // check if specialist hasn't already submitted a proposal for this order
+        List<Proposal> existingProposals = proposalRepository.findBySpecialistIdAndOrderId(specialistId, orderId);
+        return existingProposals.isEmpty();
     }
 }

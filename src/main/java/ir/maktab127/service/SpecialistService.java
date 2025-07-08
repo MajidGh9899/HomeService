@@ -1,6 +1,8 @@
 package ir.maktab127.service;
 
 import ir.maktab127.dto.SpecialistUpdateDto;
+import ir.maktab127.entity.Order;
+import ir.maktab127.entity.Proposal;
 import ir.maktab127.entity.user.Specialist;
 
 import java.util.List;
@@ -14,5 +16,12 @@ public interface SpecialistService {
     void delete(Long id);
     Optional<Specialist> login(String email, String password);
     void updateInfo(Long specialistId, SpecialistUpdateDto dto) throws IllegalStateException;
+
+    //Phase2-for Proposal
+    Proposal submitProposal(Long specialistId, Long orderId, Proposal proposal);
+    List<Order> getAvailableOrdersForSpecialist(Long specialistId);
+    List<Proposal> getSpecialistProposals(Long specialistId);
+    boolean canSubmitProposal(Long specialistId, Long orderId);
+
 
 }
