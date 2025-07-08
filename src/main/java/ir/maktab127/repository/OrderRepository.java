@@ -15,4 +15,5 @@ public interface OrderRepository {
     List<Order> findByStatus(OrderStatus status);
     List<Order> findByStatusIn(List<OrderStatus> statuses);
     List<Order> findByServiceCategoryId(Long serviceCategoryId);
+    Boolean hasActualOrder(Long serviceCategoryId);
 }

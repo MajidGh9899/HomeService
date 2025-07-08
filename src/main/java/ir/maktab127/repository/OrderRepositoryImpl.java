@@ -64,4 +64,15 @@ public class OrderRepositoryImpl implements OrderRepository {
                 .setParameter("serviceCategoryId", serviceCategoryId)
                 .getResultList();
     }
+
+    @Override
+    public Boolean hasActualOrder(Long serviceCategoryId) {
+
+        return !entityManager.createQuery(
+                        "SELECT o FROM Order o WHERE o.service.id = :serviceCategoryId AND o.status = :status", Order.class)
+                .setParameter("serviceCategoryId", serviceCategoryId)
+                .setParameter("status", OrderStatus.IN_PROGRESS)
+                .getResultList().isEmpty();
+
+    }
 }

@@ -69,10 +69,7 @@ public class SpecialistServiceImpl implements SpecialistService {
                 .orElseThrow(() -> new IllegalArgumentException("Specialist not found"));
 
         // بررسی نداشتن کار فعال
-        boolean hasActiveOrder = orderRepository.findAll().stream()
-                .anyMatch(order -> order.getSpecialist() != null
-                        && order.getSpecialist().getId().equals(specialistId)
-                        && order.getStatus() == OrderStatus.IN_PROGRESS);//query
+        boolean hasActiveOrder = orderRepository.hasActualOrder(specialistId);
 
         if (hasActiveOrder) {
             throw new IllegalStateException("Specialist has active work and cannot update info now.");
