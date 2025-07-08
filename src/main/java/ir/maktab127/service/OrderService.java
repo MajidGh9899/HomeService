@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import ir.maktab127.dto.OrderRegisterDto;
 import ir.maktab127.entity.Order;
+import ir.maktab127.entity.OrderStatus;
 
 public interface OrderService {
     Order save(Order order);
@@ -16,4 +17,9 @@ public interface OrderService {
 
     void payToSpecialist(Long orderId, Long specialistId);
     Order registerOrder(OrderRegisterDto dto);
+
+    //
+    void updateOrderStatus(Long orderId, OrderStatus status);
+    List<Order> getOrdersByStatus(OrderStatus status);
+    List<Order> getOrdersByServiceCategory(Long serviceCategoryId);
 }

@@ -85,5 +85,25 @@ public class OrderServiceImpl implements OrderService {
         }
 
     }
+    //
+    @Override
+    public void updateOrderStatus(Long orderId, OrderStatus status) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isPresent()) {
+            Order order = orderOpt.get();
+            order.setStatus(status);
+            orderRepository.save(order);
+        }
+    }
+
+    @Override
+    public List<Order> getOrdersByStatus(OrderStatus status) {
+        return orderRepository.findByStatus(status);
+    }
+
+    @Override
+    public List<Order> getOrdersByServiceCategory(Long serviceCategoryId) {
+        return orderRepository.findByServiceCategoryId(serviceCategoryId);
+    }
 
 }
