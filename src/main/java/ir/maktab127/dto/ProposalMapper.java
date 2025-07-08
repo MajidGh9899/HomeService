@@ -6,6 +6,7 @@ import ir.maktab127.entity.ProposalStatus;
 import ir.maktab127.entity.user.Specialist;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class ProposalMapper {
@@ -17,7 +18,7 @@ public class ProposalMapper {
         proposal.setProposedStartTime(dto.getStartDate());
         proposal.setEndDate(dto.getEndDate());
         proposal.setDescription(dto.getDescription());
-        proposal.setCreatedAt(LocalDateTime.now());
+        proposal.setCreateDate(ZonedDateTime.from(LocalDateTime.now()));
         proposal.setStatus(ProposalStatus.PENDING);
         return proposal;
     }
@@ -32,7 +33,7 @@ public class ProposalMapper {
         dto.setStartDate(proposal.getProposedStartTime());
         dto.setEndDate(proposal.getEndDate());
         dto.setDescription(proposal.getDescription());
-        dto.setCreatedAt(proposal.getCreatedAt());
+        dto.setCreatedAt(proposal.getCreateDate().toLocalDateTime());
         dto.setStatus(proposal.getStatus());
         return dto;
     }

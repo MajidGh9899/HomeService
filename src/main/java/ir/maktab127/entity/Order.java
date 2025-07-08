@@ -48,8 +48,7 @@ public class Order extends BaseEntity<Long> {
     @Column(name = addresses, nullable = false)
     private String address;
 
-    @Column(name = created_at, nullable = false)
-    private LocalDateTime createdAt;
+   
 
     @Enumerated(EnumType.STRING)
     @Column(name = status_order, nullable = false)

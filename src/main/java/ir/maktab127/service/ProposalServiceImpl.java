@@ -9,24 +9,26 @@ import ir.maktab127.repository.OrderRepository;
 import ir.maktab127.repository.ProposalRepository;
 import ir.maktab127.repository.ProposalRepositoryImpl;
 import ir.maktab127.repository.SpecialistRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 @Service
+@RequiredArgsConstructor
 public class ProposalServiceImpl implements ProposalService {
+    @Autowired
     private final ProposalRepository proposalRepository;
+    @Autowired
     private final SpecialistRepository  specialistRepository;
+    @Autowired
     private final OrderRepository orderRepository;
 
-    @Autowired
-    public ProposalServiceImpl(ProposalRepository proposalRepository, SpecialistRepository specialistRepository, OrderRepository orderRepository) {
-        this.proposalRepository = proposalRepository;
-        this.specialistRepository = specialistRepository;
-        this.orderRepository = orderRepository;
-    }
+
 
     @Override
     public Proposal save(Proposal proposal) {
@@ -48,6 +50,7 @@ public class ProposalServiceImpl implements ProposalService {
     public void delete(Long id) {
              proposalRepository.findById(id).ifPresent(proposalRepository::delete);
     }
+    @Transactional
     @Override
     public Proposal registerProposal(ProposalRegisterDto dto) {
         Specialist specialist = specialistRepository.findById(dto.getSpecialistId())
@@ -66,7 +69,7 @@ public class ProposalServiceImpl implements ProposalService {
         proposal.setProposedPrice(dto.getProposedPrice());
         proposal.setProposedStartTime(LocalDateTime.parse(dto.getStartDate()  + "T00:00:00"));
         proposal.setEndDate(LocalDateTime.parse(dto.getEndDate() + "T00:00:00"));
-        proposal.setCreatedAt(LocalDateTime.now());
+        proposal.setCreateDate(ZonedDateTime.from(LocalDateTime.now()));
         return proposalRepository.save(proposal);
     }
 

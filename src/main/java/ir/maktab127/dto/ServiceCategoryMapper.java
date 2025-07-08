@@ -18,7 +18,7 @@ public class ServiceCategoryMapper {
         service.setName(dto.getName());
         service.setBasePrice(dto.getBasePrice());
         service.setDescription(dto.getDescription());
-        service.setParent( );
+        service.setParent(  dto.getParentId() != null ? new ServiceCategory(){{setId(dto.getParentId());}} : null);
         return service;
     }
 }

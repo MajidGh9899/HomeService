@@ -1,5 +1,6 @@
 package ir.maktab127.entity.user;
 
+import ir.maktab127.entity.Comment;
 import ir.maktab127.entity.ServiceCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,6 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@DiscriminatorValue("specialist")
 public class Specialist  extends User {
     @Column
     private String profileImagePath;
@@ -28,4 +30,8 @@ public class Specialist  extends User {
             inverseJoinColumns = @JoinColumn(name = "service_category_id")
     )
     private List<ServiceCategory> serviceCategories = new ArrayList<>();
+
+    @OneToMany(mappedBy = "specialist")
+    private List<Comment> comments = new ArrayList<>();
+
 }

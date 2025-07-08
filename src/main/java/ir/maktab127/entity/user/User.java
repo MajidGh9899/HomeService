@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 
-@MappedSuperclass
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NoArgsConstructor
 @DiscriminatorColumn(name = "user_type")

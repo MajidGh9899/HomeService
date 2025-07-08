@@ -3,19 +3,22 @@ package ir.maktab127.service;
 import ir.maktab127.dto.CustomerUpdateDto;
 import ir.maktab127.entity.user.Customer;
 import ir.maktab127.repository.CustomerRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 @Service
+@RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
-    private final CustomerRepository customerRepository;
     @Autowired
-    public CustomerServiceImpl(CustomerRepository customerRepository) {
-        this.customerRepository = customerRepository;
-    }
+    private final CustomerRepository customerRepository;
+
     @Override
+    @Transactional
     public Customer save(Customer customer) { return customerRepository.save(customer); }
     @Override
     public Optional<Customer> findById(Long id) { return customerRepository.findById(id); }
@@ -31,6 +34,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .filter(c -> c.getPassword().equals(password));
     }
     @Override
+    @Transactional
     public void updateInfo(Long customerId, CustomerUpdateDto dto) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));

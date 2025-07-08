@@ -101,7 +101,7 @@ public class SpecialistController {
             @PathVariable Long specialistId,
             @Valid @RequestBody ProposalRegisterDto dto) {
 
-        // Validate that the specialist can submit a proposal for this order
+
         if (!specialistService.canSubmitProposal(specialistId, dto.getOrderId())) {
             return ResponseEntity.badRequest().build();
         }
@@ -117,9 +117,9 @@ public class SpecialistController {
         Proposal proposal = ProposalMapper.toEntity(dto, orderOpt.get(), specialistOpt.get());
         Proposal savedProposal = proposalService.save(proposal);
 
-        // Check if this is the first proposal for the order
+
         if (proposalService.isFirstProposalForOrder(dto.getOrderId())) {
-            // Update order status to WAITING_FOR_SPECIALIST_SELECTION
+
             orderService.updateOrderStatus(dto.getOrderId(),
                     OrderStatus.WAITING_FOR_SPECIALIST_SELECTION);
         }

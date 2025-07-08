@@ -12,20 +12,25 @@ import ir.maktab127.repository.SpecialistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class SpecialistServiceImpl implements SpecialistService {
+    @Autowired
     private final SpecialistRepository specialistRepository;
+    @Autowired
     private final OrderRepository orderRepository;
+    @Autowired
     private final ProposalRepository proposalRepository;
 
 
 
-
+    @Transactional
     @Override
     public Specialist register(Specialist specialist) {
         specialist.setStatus(AccountStatus.NEW);
@@ -57,6 +62,7 @@ public class SpecialistServiceImpl implements SpecialistService {
         return specialistRepository.findByEmail(email)
                 .filter(s -> s.getPassword().equals(password) && s.getStatus() == AccountStatus.APPROVED);
     }
+    @Transactional
     @Override
     public void updateInfo(Long specialistId, SpecialistUpdateDto dto) {
         Specialist specialist = specialistRepository.findById(specialistId)
@@ -87,7 +93,7 @@ public class SpecialistServiceImpl implements SpecialistService {
         }
 
 
-        proposal.setCreatedAt(LocalDateTime.now());
+        proposal.setCreateDate(ZonedDateTime.from(LocalDateTime.now()));
 
 
         return proposalRepository.save(proposal);
@@ -97,8 +103,8 @@ public class SpecialistServiceImpl implements SpecialistService {
     public List<Order> getAvailableOrdersForSpecialist(Long specialistId) {
 
         return orderRepository.findByStatusIn(List.of(
-                OrderStatus.WAITING_FOR_PROPOSAL,
-                OrderStatus.WAITING_FOR_SPECIALIST_SELECTION
+
+                OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL
         ));
     }
 
@@ -123,7 +129,8 @@ public class SpecialistServiceImpl implements SpecialistService {
 
         Order order = orderOpt.get();
         if (order.getStatus() != OrderStatus.WAITING_FOR_PROPOSAL &&
-                order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_SELECTION) {
+                order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_SELECTION
+                && order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL) {
             return false;
         }
 

@@ -8,25 +8,29 @@ import ir.maktab127.entity.user.Customer;
 import ir.maktab127.repository.CustomerRepository;
 import ir.maktab127.repository.OrderRepository;
 import ir.maktab127.repository.ServiceCategoryRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 @Service
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
-    private final OrderRepository orderRepository;
-    private final WalletService walletService;
-    private final CustomerRepository customerRepository;
-    private final ServiceCategoryRepository serviceCategoryRepository;
     @Autowired
-    public OrderServiceImpl(OrderRepository orderRepository, WalletService walletService, CustomerRepository customerRepository, ServiceCategoryRepository serviceCategoryRepository) {
-        this.orderRepository = orderRepository;
-        this.customerRepository = customerRepository;
-        this.serviceCategoryRepository = serviceCategoryRepository;
-        this.walletService = walletService;
-    }
+    private final OrderRepository orderRepository;
+    @Autowired
+    private final WalletService walletService;
+    @Autowired
+    private final CustomerRepository customerRepository;
+    @Autowired
+    private final ServiceCategoryRepository serviceCategoryRepository;
+
+
+    @Transactional
     @Override
     public Order save(Order order) { return orderRepository.save(order); }
     @Override
@@ -35,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
     public List<Order> getAll() { return orderRepository.findAll(); }
     @Override
     public void delete(Long id) { orderRepository.findById(id).ifPresent(orderRepository::delete); }
+    @Transactional
     @Override
     public void completedOrder(Long orderId) {
         Optional<Order> order = orderRepository.findById(orderId);
@@ -48,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
 
     }
     @Override
+    @Transactional
     public Order registerOrder(OrderRegisterDto dto) {
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
@@ -65,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
         order.setProposedPrice(dto.getProposedPrice());
         order.setAddress(dto.getAddress());
         order.setStartDate(LocalDateTime.parse(dto.getStartDate()));
-        order.setCreatedAt(LocalDateTime.now());
+        order.setCreateDate(ZonedDateTime.from(LocalDateTime.now()));
         order.setStatus(OrderStatus.WAITING_FOR_PROPOSAL);
         return orderRepository.save(order);
     }
@@ -87,6 +93,7 @@ public class OrderServiceImpl implements OrderService {
     }
     //
     @Override
+    @Transactional
     public void updateOrderStatus(Long orderId, OrderStatus status) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         if (orderOpt.isPresent()) {

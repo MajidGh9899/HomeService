@@ -14,7 +14,7 @@ public class OrderMapper {
         dto.setProposedPrice(order.getProposedPrice());
         dto.setAddress(order.getAddress());
         dto.setStartDate(order.getStartDate() != null ? order.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
-        dto.setCreatedAt(order.getCreatedAt() != null ? order.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
+        dto.setCreatedAt(order.getCreateDate() != null ? order.getCreateDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
         dto.setStatus(order.getStatus() != null ? order.getStatus().name() : null);
         return dto;
     }
