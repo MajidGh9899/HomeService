@@ -96,7 +96,7 @@ public class SpecialistController {
     }
 
     // Submit Proposal
-    @PostMapping("/{specialistId}/proposals")
+    @PostMapping("/{specialistId}/proposals-submit")
     public ResponseEntity<ProposalResponseDto> submitProposal(
             @PathVariable Long specialistId,
             @Valid @RequestBody ProposalRegisterDto dto) {

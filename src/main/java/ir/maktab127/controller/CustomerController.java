@@ -173,17 +173,17 @@ public class CustomerController {
         Order order = orderOpt.get();
         if (!order.getCustomer().getId().equals(customerId))
             return ResponseEntity.badRequest().build();
-//        if (order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL)
-//            return ResponseEntity.badRequest().build();
+        if (order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL)
+            return ResponseEntity.badRequest().build();
         // پیدا کردن پیشنهاد پذیرفته‌شده
         Proposal acceptedProposal = proposalService.getProposalsByOrder(orderId).stream()
                 .filter(p -> p.getStatus() == ProposalStatus.ACCEPTED)
                 .findFirst().orElse(null);
-//        if (acceptedProposal == null)
-//            return ResponseEntity.badRequest().build();
-        // فقط بعد از زمان پیشنهادی متخصص
-//        if (now.isBefore(acceptedProposal.getProposedStartTime()))
-//            return ResponseEntity.badRequest().build();
+        if (acceptedProposal == null)
+            return ResponseEntity.badRequest().build();
+//         فقط بعد از زمان پیشنهادی متخصص
+        if (now.isBefore(acceptedProposal.getProposedStartTime()))
+            return ResponseEntity.badRequest().build();
         order.setStatus(OrderStatus.IN_PROGRESS);
         orderService.save(order);
         return ResponseEntity.ok().build();
