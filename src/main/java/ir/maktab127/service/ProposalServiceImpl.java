@@ -3,6 +3,7 @@ package ir.maktab127.service;
 import ir.maktab127.dto.ProposalRegisterDto;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.Proposal;
+import ir.maktab127.entity.ProposalStatus;
 import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.repository.OrderRepository;
 import ir.maktab127.repository.ProposalRepository;
@@ -67,5 +68,32 @@ public class ProposalServiceImpl implements ProposalService {
         proposal.setEndDate(LocalDateTime.parse(dto.getEndDate() + "T00:00:00"));
         proposal.setCreatedAt(LocalDateTime.now());
         return proposalRepository.save(proposal);
+    }
+
+    //
+    @Override
+    public List<Proposal> getProposalsByOrder(Long orderId) {
+        return proposalRepository.findByOrderId(orderId);
+    }
+
+    @Override
+    public List<Proposal> getProposalsBySpecialist(Long specialistId) {
+        return proposalRepository.findBySpecialistId(specialistId);
+    }
+
+    @Override
+    public void updateProposalStatus(Long proposalId, ProposalStatus status) {
+        Optional<Proposal> proposalOpt = proposalRepository.findById(proposalId);
+        if (proposalOpt.isPresent()) {
+            Proposal proposal = proposalOpt.get();
+            proposal.setStatus(status);
+            proposalRepository.save(proposal);
+        }
+    }
+
+    @Override
+    public boolean isFirstProposalForOrder(Long orderId) {
+        List<Proposal> proposals = proposalRepository.findByOrderId(orderId);
+        return proposals.size() == 1;
     }
 }
