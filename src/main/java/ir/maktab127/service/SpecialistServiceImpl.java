@@ -34,7 +34,7 @@ public class SpecialistServiceImpl implements SpecialistService {
     @Override
     public Specialist register(Specialist specialist) {
         specialist.setStatus(AccountStatus.NEW);
-        specialist.setRegisterDate(LocalDateTime.now());
+        specialist.setCreateDate(LocalDateTime.now());
         return specialistRepository.save(specialist);
     }
 
@@ -90,7 +90,7 @@ public class SpecialistServiceImpl implements SpecialistService {
         }
 
 
-        proposal.setCreateDate(ZonedDateTime.from(LocalDateTime.now()));
+        proposal.setCreateDate(LocalDateTime.now());
 
 
         return proposalRepository.save(proposal);

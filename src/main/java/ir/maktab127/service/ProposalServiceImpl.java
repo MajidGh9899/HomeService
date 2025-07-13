@@ -7,7 +7,7 @@ import ir.maktab127.entity.ProposalStatus;
 import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.repository.OrderRepository;
 import ir.maktab127.repository.ProposalRepository;
-import ir.maktab127.repository.ProposalRepositoryImpl;
+
 import ir.maktab127.repository.SpecialistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,7 +69,7 @@ public class ProposalServiceImpl implements ProposalService {
         proposal.setProposedPrice(dto.getProposedPrice());
         proposal.setProposedStartTime(LocalDateTime.parse(dto.getStartDate()  + "T00:00:00"));
         proposal.setEndDate(LocalDateTime.parse(dto.getEndDate() + "T00:00:00"));
-        proposal.setCreateDate(ZonedDateTime.from(LocalDateTime.now()));
+        proposal.setCreateDate(LocalDateTime.now());
         return proposalRepository.save(proposal);
     }
 

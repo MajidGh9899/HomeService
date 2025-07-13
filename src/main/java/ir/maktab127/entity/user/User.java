@@ -23,7 +23,7 @@ public abstract class User extends BaseEntity<Long> {
     public static final String last_names= "last_name";
     public static final String emails= "email";
     public static final String passwords= "password";
-    public static final String register_dates= "register_date";
+
 
     @Column(name=first_names,nullable = false)
     private String firstName;
@@ -37,6 +37,5 @@ public abstract class User extends BaseEntity<Long> {
     @Column(name = passwords, nullable = false)
     private String password;
 
-    @Column(name = register_dates , nullable = false)
-    private LocalDateTime registerDate;
+
 }

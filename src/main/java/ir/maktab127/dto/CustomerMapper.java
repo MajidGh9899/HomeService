@@ -11,7 +11,6 @@ public class CustomerMapper {
         dto.setFirstName(customer.getFirstName());
         dto.setLastName(customer.getLastName());
         dto.setEmail(customer.getEmail());
-        dto.setRegisterDate(customer.getRegisterDate() != null ? customer.getRegisterDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
         return dto;
     }
 

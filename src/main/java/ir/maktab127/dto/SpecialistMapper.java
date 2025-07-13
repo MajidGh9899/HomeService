@@ -16,7 +16,7 @@ public class SpecialistMapper {
         dto.setEmail(specialist.getEmail());
         dto.setProfileImagePath(specialist.getProfileImagePath());
         dto.setStatus(specialist.getStatus() != null ? specialist.getStatus().name() : null);
-        dto.setRegisterDate(specialist.getRegisterDate() != null ? specialist.getRegisterDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
+        dto.setRegisterDate(specialist.getCreateDate() != null ? specialist.getCreateDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
         return dto;
     }
 

@@ -10,7 +10,7 @@ import ir.maktab127.repository.OrderRepository;
 import ir.maktab127.repository.ServiceCategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,13 +20,13 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
-    @Autowired
+
     private final OrderRepository orderRepository;
-    @Autowired
+
     private final WalletService walletService;
-    @Autowired
+
     private final CustomerRepository customerRepository;
-    @Autowired
+
     private final ServiceCategoryRepository serviceCategoryRepository;
 
 
@@ -71,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
         order.setProposedPrice(dto.getProposedPrice());
         order.setAddress(dto.getAddress());
         order.setStartDate(LocalDateTime.parse(dto.getStartDate()));
-        order.setCreateDate(ZonedDateTime.from(LocalDateTime.now()));
+        order.setCreateDate(LocalDateTime.now());
         order.setStatus(OrderStatus.WAITING_FOR_PROPOSAL);
         return orderRepository.save(order);
     }

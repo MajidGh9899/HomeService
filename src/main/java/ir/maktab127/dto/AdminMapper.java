@@ -11,7 +11,7 @@ public class AdminMapper {
         dto.setFirstName(admin.getFirstName());
         dto.setLastName(admin.getLastName());
         dto.setEmail(admin.getEmail());
-        dto.setRegisterDate(admin.getRegisterDate() != null ? admin.getRegisterDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
+        dto.setRegisterDate(admin.getCreateDate() != null ? admin.getCreateDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
         return dto;
     }
     public static Admin toEntity(AdminRegisterDto dto) {

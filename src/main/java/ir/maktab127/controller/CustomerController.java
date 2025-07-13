@@ -166,7 +166,7 @@ public class CustomerController {
     public ResponseEntity<Void> startOrder(
             @PathVariable Long customerId,
             @PathVariable Long orderId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime now) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime now) {
         Optional<Order> orderOpt = orderService.findById(orderId);
         if (orderOpt.isEmpty())
             return ResponseEntity.notFound().build();
@@ -182,6 +182,7 @@ public class CustomerController {
         if (acceptedProposal == null)
             return ResponseEntity.badRequest().build();
 //         فقط بعد از زمان پیشنهادی متخصص
+
         if (now.isBefore(acceptedProposal.getProposedStartTime()))
             return ResponseEntity.badRequest().build();
         order.setStatus(OrderStatus.IN_PROGRESS);
