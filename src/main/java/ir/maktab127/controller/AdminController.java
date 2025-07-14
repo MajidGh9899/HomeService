@@ -2,6 +2,8 @@ package ir.maktab127.controller;
 
 
 import ir.maktab127.dto.*;
+import ir.maktab127.dto.User.UserResponseDto;
+import ir.maktab127.dto.User.UserSearchFilterDto;
 import ir.maktab127.entity.ServiceCategory;
 import ir.maktab127.entity.user.Admin;
 import ir.maktab127.service.AdminService;
@@ -122,4 +124,12 @@ public class AdminController {
         adminService.removeSpecialistFromServiceCategory(specialistId, serviceCategoryId);
         return ResponseEntity.noContent().build();
     }
+
+    //filter phase-3
+    @PostMapping("/users/search")
+    public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestBody UserSearchFilterDto filter) {
+        List<UserResponseDto> users = adminService.searchUsers(filter);
+        return ResponseEntity.ok(users);
+    }
+
 }

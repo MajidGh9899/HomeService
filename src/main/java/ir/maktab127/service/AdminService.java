@@ -3,6 +3,8 @@ package ir.maktab127.service;
 import java.util.List;
 import java.util.Optional;
 
+import ir.maktab127.dto.User.UserResponseDto;
+import ir.maktab127.dto.User.UserSearchFilterDto;
 import ir.maktab127.entity.user.Admin;
 import ir.maktab127.entity.user.Specialist;
 
@@ -18,4 +20,7 @@ public interface AdminService {
     List<Specialist> getPendingSpecialists();
     void addSpecialistToServiceCategory(Long specialistId, Long serviceCategoryId);
     void removeSpecialistFromServiceCategory(Long specialistId, Long serviceCategoryId);
+
+    //phase3
+    List<UserResponseDto> searchUsers(UserSearchFilterDto filter);
 }

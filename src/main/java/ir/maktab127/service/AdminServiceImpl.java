@@ -1,29 +1,34 @@
 package ir.maktab127.service;
 
+import ir.maktab127.dto.User.UserResponseDto;
+import ir.maktab127.dto.User.UserSearchFilterDto;
+import ir.maktab127.entity.Comment;
 import ir.maktab127.entity.ServiceCategory;
 import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Admin;
+import ir.maktab127.entity.user.Customer;
 import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.repository.AdminRepository;
+import ir.maktab127.repository.CustomerRepository;
 import ir.maktab127.repository.ServiceCategoryRepository;
 import ir.maktab127.repository.SpecialistRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
+@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
     private final AdminRepository adminRepository;
     private final SpecialistRepository  specialistRepository;
     private final ServiceCategoryRepository serviceCategoryRepository;
+    private final CustomerRepository customerRepository;
 
-    public AdminServiceImpl(AdminRepository adminRepository, SpecialistRepository specialistRepository, ServiceCategoryRepository serviceCategoryRepository ) {
-        this.adminRepository = adminRepository;
-        this.specialistRepository = specialistRepository;
-        this.serviceCategoryRepository = serviceCategoryRepository;
 
-    }
     @Override
     public Admin save(Admin admin) { return adminRepository.save(admin); }
     @Override
@@ -65,6 +70,49 @@ public class AdminServiceImpl implements AdminService {
         ServiceCategory serviceCategory = serviceCategoryRepository.findById(serviceCategoryId).orElseThrow();
         specialist.getServiceCategories().remove(serviceCategory);
         specialistRepository.save(specialist);
+    }
+
+    @Override
+    public List<UserResponseDto> searchUsers(UserSearchFilterDto filter) {
+        List<UserResponseDto> result = new java.util.ArrayList<>();
+        if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("SPECIALIST")) {
+            List<Specialist> specialists = specialistRepository.searchWithFilters(
+                    filter.getFirstName(),
+                    filter.getLastName(),
+                    filter.getServiceName(),
+                    filter.getMinScore() != null ? filter.getMinScore().intValue() : null,
+                    filter.getMaxScore() != null ? filter.getMaxScore().intValue() : null
+            );
+            result.addAll(specialists.stream().map(s -> {
+                UserResponseDto dto = new UserResponseDto();
+                dto.setId(s.getId());
+                dto.setRole("SPECIALIST");
+                dto.setFirstName(s.getFirstName());
+                dto.setLastName(s.getLastName());
+                dto.setEmail(s.getEmail());
+                dto.setScore((double) s.getComments().stream().mapToInt(Comment::getRating).sum());
+                if (s.getServiceCategories() != null && !s.getServiceCategories().isEmpty())
+                    dto.setServiceName(s.getServiceCategories().stream().map(ServiceCategory::getName).collect(Collectors.joining(", ")));
+                return dto;
+            }).toList());
+        }
+        if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("CUSTOMER")) {
+            List<Customer> customers = customerRepository.searchWithFilters(
+                    filter.getFirstName(),
+                    filter.getLastName()
+            );
+            result.addAll(customers.stream().map(c -> {
+                UserResponseDto dto = new UserResponseDto();
+                dto.setId(c.getId());
+                dto.setRole("CUSTOMER");
+                dto.setFirstName(c.getFirstName());
+                dto.setLastName(c.getLastName());
+                dto.setEmail(c.getEmail());
+                return dto;
+            }).toList());
+        }
+        return result;
+
     }
 
 }

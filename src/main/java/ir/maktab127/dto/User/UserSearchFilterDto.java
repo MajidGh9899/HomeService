@@ -1,0 +1,15 @@
+package ir.maktab127.dto.User;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class UserSearchFilterDto {
+    private String role;
+    private String firstName;
+    private String lastName;
+    private String serviceName; // فقط برای متخصص
+    private Double minScore;    // فقط برای متخصص
+    private Double maxScore;
+}
