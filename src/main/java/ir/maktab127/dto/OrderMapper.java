@@ -1,6 +1,7 @@
 package ir.maktab127.dto;
 
 import ir.maktab127.entity.Order;
+import ir.maktab127.entity.Proposal;
 
 import java.time.format.DateTimeFormatter;
 
@@ -16,6 +17,12 @@ public class OrderMapper {
         dto.setStartDate(order.getStartDate() != null ? order.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
         dto.setCreatedAt(order.getCreateDate() != null ? order.getCreateDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
         dto.setStatus(order.getStatus() != null ? order.getStatus().name() : null);
+        return dto;
+    }
+    public static OrderResponseDto toResponseDto(Proposal proposal) {
+        Order order = proposal.getOrder();
+        OrderResponseDto dto = toResponseDto(order);
+        dto.setProposalId(proposal.getId());
         return dto;
     }
 }

@@ -11,4 +11,7 @@ public interface CommentService {
     List<Comment> getAll();
     void delete(Long id);
     Comment registerComment(CommentRegisterDto dto, Long orderId);
+
+    Double getAverageRatingForSpecialist(Long specialistId);
+    Integer getOrderRatingForSpecialist(Long specialistId, Long orderId);
 }

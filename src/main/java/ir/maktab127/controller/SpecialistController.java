@@ -6,9 +6,7 @@ import ir.maktab127.entity.OrderStatus;
 import ir.maktab127.entity.Proposal;
 import ir.maktab127.entity.ProposalStatus;
 import ir.maktab127.entity.user.Specialist;
-import ir.maktab127.service.OrderService;
-import ir.maktab127.service.ProposalService;
-import ir.maktab127.service.SpecialistService;
+import ir.maktab127.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,12 +28,14 @@ public class SpecialistController {
     private final SpecialistService specialistService;
     private final ProposalService proposalService;
     private final OrderService orderService;
+    private final CommentService commentService;
+    private final WalletService walletService;
 
 
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody SpecialistRegisterDto dto,
-                                                          @RequestParam("profileImage") MultipartFile profileImage) {
+                                                          @RequestParam("profileImage") MultipartFile profileImage) throws IOException {
         if (profileImage != null && !profileImage.isEmpty()) {
             long maxSizeInBytes = 300 * 1024; // 300 KB
             if (profileImage.getSize() > maxSizeInBytes) {
@@ -167,6 +168,44 @@ public class SpecialistController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+    // phse 3 history
+    @GetMapping("/{specialistId}/orders/history")
+    public ResponseEntity<List<OrderResponseDto>> getOrderHistory(@PathVariable Long specialistId) {
+        List<OrderResponseDto> history = proposalService.getProposalsBySpecialist(specialistId)
+                .stream()
+                .map(OrderMapper::toResponseDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(history);
+    }
+
+    //comment and averge rating
+    @GetMapping("/{specialistId}/rating/average")
+    public ResponseEntity<Double> getAverageRating(@PathVariable Long specialistId) {
+        Double avg = commentService.getAverageRatingForSpecialist(specialistId);
+        return ResponseEntity.ok(avg);
+    }
+
+    // مشاهده امتیاز سفارش خاص
+    @GetMapping("/orders/rating/{specialistId}/{orderId}")
+    public ResponseEntity<Integer> getOrderRating(@PathVariable Long specialistId, @PathVariable Long orderId) {
+        Integer rating = commentService.getOrderRatingForSpecialist(specialistId, orderId);
+        return ResponseEntity.ok(rating);
+    }
+
+    //کیف پول
+    @GetMapping("/{specialistId}/balance")
+    public ResponseEntity<java.math.BigDecimal> getBalance(@PathVariable Long specialistId) {
+        return ResponseEntity.ok(walletService.getBalanceByUserId(specialistId));
+    }
+
+    // مشاهده تاریخچه تراکنش‌های کیف پول متخصص
+    @GetMapping("/{specialistId}/transactions")
+    public ResponseEntity<List<WalletTransactionDto>> getTransactions(@PathVariable Long specialistId) {
+        var txs = walletService.getTransactionsByUserId(specialistId)
+                .stream().map(WalletTransactionMapper::toDto)
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(txs);
     }
 
 }

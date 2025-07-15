@@ -58,4 +58,17 @@ public class CommentServiceImpl implements CommentService {
         comment.setCreatedAt(java.time.LocalDateTime.now());
         return commentRepository.save(comment);
     }
+    @Override
+    public Double getAverageRatingForSpecialist(Long specialistId) {
+        List<Comment> comments = commentRepository.findBySpecialistId(specialistId);
+        if (comments.isEmpty()) return null;
+        return comments.stream().mapToInt(Comment::getRating).average().orElse(0);
+    }
+
+    @Override
+    public Integer getOrderRatingForSpecialist(Long specialistId, Long orderId) {
+        List<Comment> comments = commentRepository.findBySpecialistIdAndOrderId(specialistId, orderId);
+        if (comments.isEmpty()) return null;
+        return comments.get(0).getRating();
+    }
 }

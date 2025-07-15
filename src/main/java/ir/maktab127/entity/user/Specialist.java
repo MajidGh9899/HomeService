@@ -1,6 +1,7 @@
 package ir.maktab127.entity.user;
 
 import ir.maktab127.entity.Comment;
+import ir.maktab127.entity.Order;
 import ir.maktab127.entity.ServiceCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 @Entity
@@ -33,5 +35,7 @@ public class Specialist  extends User {
 
     @OneToMany(mappedBy = "specialist")
     private List<Comment> comments = new ArrayList<>();
+
+
 
 }

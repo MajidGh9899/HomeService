@@ -17,4 +17,5 @@ public class OrderResponseDto {
     private String startDate;
     private String createdAt;
     private String status;
+    private Long proposalId;
 }

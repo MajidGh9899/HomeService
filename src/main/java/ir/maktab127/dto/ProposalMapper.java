@@ -37,4 +37,5 @@ public class ProposalMapper {
         dto.setStatus(proposal.getStatus());
         return dto;
     }
+
 }

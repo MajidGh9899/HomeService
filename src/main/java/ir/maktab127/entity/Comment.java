@@ -30,6 +30,10 @@ public class Comment extends BaseEntity<Long> {
     @JoinColumn(name = customers, nullable = false)
     private Customer customer;
 
+    @OneToOne(optional = true)
+    @JoinColumn(name = "order_id", nullable = true)
+    private Order order;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = specialists, nullable = false)
     private Specialist specialist;

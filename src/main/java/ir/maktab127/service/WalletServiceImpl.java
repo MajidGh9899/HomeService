@@ -1,7 +1,10 @@
 package ir.maktab127.service;
 
 import ir.maktab127.entity.Wallet;
+import ir.maktab127.entity.WalletTransaction;
 import ir.maktab127.repository.WalletRepository;
+import ir.maktab127.repository.WalletTransactionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,12 +12,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 @Service
+@RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
-    @Autowired
-    public WalletServiceImpl(WalletRepository walletRepository) {
-        this.walletRepository = walletRepository;
-    }
+    private final WalletTransactionRepository walletTransactionRepository;
+
     @Override
     public Wallet save(Wallet wallet) { return walletRepository.save(wallet); }
     @Override
@@ -40,5 +42,19 @@ public class WalletServiceImpl implements WalletService {
             throw new IllegalStateException("Insufficient balance");
         wallet.setBalance(wallet.getBalance().subtract(amount));
         walletRepository.save(wallet);
+    }
+    //phase 3
+    @Override
+    public java.math.BigDecimal getBalanceByUserId(Long userId) {
+        return walletRepository.findByUserId(userId)
+                .map(Wallet::getBalance)
+                .orElse(java.math.BigDecimal.ZERO);
+    }
+
+    @Override
+    public List<WalletTransaction> getTransactionsByUserId(Long userId) {
+        return walletRepository.findByUserId(userId)
+                .map(wallet -> walletTransactionRepository.findByWalletId(wallet.getId()))
+                .orElse(java.util.Collections.emptyList());
     }
 }
