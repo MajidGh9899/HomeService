@@ -50,7 +50,7 @@ public class PaymentController {
         g2d.dispose(); // بستن منابع گرافیکی
 
         // ذخیره تصویر در فایل (در پوشه temp مثلاً)
-        File outputFile = new File("captcha_" + captchaText + ".png");
+        File outputFile = new File("static/images/captcha_" + captchaText + ".png");
         ImageIO.write(bufferedImage, "png", outputFile);
 
         // ارسال تصویر به مرورگر
@@ -70,6 +70,7 @@ public class PaymentController {
         // اعتبارسنجی ساده (همه چیز معتبر فرض می‌شود)
         // بررسی مهلت پرداخت (در اینجا فقط شبیه‌سازی)
         // ...
-        return ResponseEntity.ok("پرداخت با موفقیت انجام شد!");
+
+        return ResponseEntity.ok("کیف پول با موفقیت شارژ شد");
     }
 }

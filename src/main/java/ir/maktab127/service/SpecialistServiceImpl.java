@@ -39,8 +39,7 @@ public class SpecialistServiceImpl implements SpecialistService {
         if(profileImage == null)
             specialist.setStatus(AccountStatus.NEW);
         else{
-            String base64Image = Base64.getEncoder().encodeToString(profileImage.getBytes());
-            specialist.setProfileImage(base64Image);
+
             specialist.setStatus(AccountStatus.PENDING);
         }
 

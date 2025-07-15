@@ -10,12 +10,14 @@ import ir.maktab127.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,15 +35,20 @@ public class SpecialistController {
 
 
 
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> register(@Valid @RequestBody SpecialistRegisterDto dto,
-                                                          @RequestParam("profileImage") MultipartFile profileImage) throws IOException {
+                                                          @RequestPart("profileImage") MultipartFile profileImage) throws IOException {
+        String base64Image;
         if (profileImage != null && !profileImage.isEmpty()) {
             long maxSizeInBytes = 300 * 1024; // 300 KB
+
+          //  specialist.setProfileImage(base64Image);
             if (profileImage.getSize() > maxSizeInBytes) {
                 return ResponseEntity.badRequest().body("Max image size is 300 KB");
             }
         }
+        base64Image = Base64.getEncoder().encodeToString(profileImage.getBytes());
+        dto.setProfileImage(base64Image);
         Specialist specialist = SpecialistMapper.toEntity(dto);
         Specialist saved = specialistService.register(specialist,profileImage);
         return ResponseEntity.ok(SpecialistMapper.toResponseDto(saved));

@@ -4,6 +4,7 @@ import ir.maktab127.dto.*;
 import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.*;
 import ir.maktab127.entity.user.Customer;
+import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -217,6 +218,28 @@ public class CustomerController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PostMapping("/{customerId}/orders/{orderId}/comment")
+    public ResponseEntity<Void> addComment(@PathVariable Long customerId, @PathVariable Long orderId, @RequestBody CommentRegisterDto dto) {
+        // اعتبارسنجی مالکیت سفارش و وضعیت سفارش
+        Optional<Order> orderOpt = orderService.findById(orderId);
+        if (orderOpt.isEmpty() || !orderOpt.get().getCustomer().getId().equals(customerId)) {
+            return ResponseEntity.notFound().build();
+        }
+        Order order = orderOpt.get();
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            return ResponseEntity.badRequest().build();
+        }
+        // ثبت نظر
+        Comment comment = new Comment();
+        comment.setCustomer(order.getCustomer());
+        comment.setSpecialist(dto.getSpecialistId() != null ? new Specialist() {{ setId(dto.getSpecialistId()); }} : null);
+        comment.setRating(dto.getRating());
+        comment.setText(dto.getText());
+        comment.setCreatedAt(java.time.LocalDateTime.now());
+        commentService.save(comment);
+        return ResponseEntity.ok().build();
     }
 
 

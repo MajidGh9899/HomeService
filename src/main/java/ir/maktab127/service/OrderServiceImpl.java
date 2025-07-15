@@ -126,7 +126,7 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() != OrderStatus.COMPLETED)
             throw new RuntimeException("Order is not completed");
         Wallet customerWallet = walletRepository.findByUserId(paymentRequest.getCustomerId()).orElseThrow(() -> new RuntimeException("Customer wallet not found"));
-        Specialist specialist = (Specialist) order.getService().getSpecialists().stream().findFirst().orElseThrow(() -> new RuntimeException("Specialist not found"));
+        Specialist specialist =  order.getSpecialist();
         Wallet specialistWallet = walletRepository.findByUserId(specialist.getId()).orElseThrow(() -> new RuntimeException("Specialist wallet not found"));
         BigDecimal price = order.getProposedPrice();
         if (customerWallet.getBalance().compareTo(price) < 0)
@@ -165,7 +165,7 @@ public class OrderServiceImpl implements OrderService {
             if (newRating < 0)
                 specialist.setStatus(AccountStatus.DEACTIVATED);
         }
-        // ... ذخیره تغییرات متخصص
+
     }
 
 }
