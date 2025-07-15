@@ -1,18 +1,19 @@
 package ir.maktab127.service;
 
 import ir.maktab127.dto.OrderRegisterDto;
-import ir.maktab127.entity.Order;
-import ir.maktab127.entity.OrderStatus;
-import ir.maktab127.entity.ServiceCategory;
+import ir.maktab127.dto.payment.PaymentRequestDto;
+import ir.maktab127.entity.*;
+import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Customer;
-import ir.maktab127.repository.CustomerRepository;
-import ir.maktab127.repository.OrderRepository;
-import ir.maktab127.repository.ServiceCategoryRepository;
+import ir.maktab127.entity.user.Specialist;
+import ir.maktab127.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -28,6 +29,10 @@ public class OrderServiceImpl implements OrderService {
     private final CustomerRepository customerRepository;
 
     private final ServiceCategoryRepository serviceCategoryRepository;
+
+    private final WalletRepository walletRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
+    private final ProposalService proposalService;
 
 
     @Transactional
@@ -111,6 +116,56 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Order> getOrdersByServiceCategory(Long serviceCategoryId) {
         return orderRepository.findByServiceCategoryId(serviceCategoryId);
+    }
+
+    //phase 3
+    @Transactional
+    @Override
+    public void payOrder(Long orderId, PaymentRequestDto paymentRequest) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        if (order.getStatus() != OrderStatus.COMPLETED)
+            throw new RuntimeException("Order is not completed");
+        Wallet customerWallet = walletRepository.findByUserId(paymentRequest.getCustomerId()).orElseThrow(() -> new RuntimeException("Customer wallet not found"));
+        Specialist specialist = (Specialist) order.getService().getSpecialists().stream().findFirst().orElseThrow(() -> new RuntimeException("Specialist not found"));
+        Wallet specialistWallet = walletRepository.findByUserId(specialist.getId()).orElseThrow(() -> new RuntimeException("Specialist wallet not found"));
+        BigDecimal price = order.getProposedPrice();
+        if (customerWallet.getBalance().compareTo(price) < 0)
+            throw new RuntimeException("Insufficient balance Please Charge it");
+        // کسر از کیف پول مشتری
+        customerWallet.setBalance(customerWallet.getBalance().subtract(price));
+        walletRepository.save(customerWallet);
+        // واریز ۷۰٪ به متخصص
+        BigDecimal specialistShare = price.multiply(BigDecimal.valueOf(0.7));
+        specialistWallet.setBalance(specialistWallet.getBalance().add(specialistShare));
+        walletRepository.save(specialistWallet);
+        //   ثبت تراکنش برای مشتری و متخصص
+        WalletTransaction tx1 = new WalletTransaction();
+        tx1.setWallet(customerWallet);
+        tx1.setAmount(price.negate());
+        tx1.setCreateDate(LocalDateTime.now());
+        tx1.setDescription("pay to order id  :  " + orderId);
+        walletTransactionRepository.save(tx1);
+
+        WalletTransaction tx2 = new WalletTransaction();
+        tx2.setWallet(specialistWallet);
+        tx2.setAmount(specialistShare);
+        tx2.setCreateDate(LocalDateTime.now());
+        tx2.setDescription("for Done order id  : " + orderId);
+        walletTransactionRepository.save(tx2);
+        // جریمه تأخیر
+        LocalDateTime proposedSpecialistEndTime = proposalService.getProposalByOrderAndSpecialist(orderId, specialist.getId()).getEndDate(); // فرض: مدت سفارش ۸ ساعت
+        LocalDateTime actualEnd = LocalDateTime.now(); // فرض: زمان پایان الان
+        long delayHours = Duration.between(proposedSpecialistEndTime, actualEnd).toHours();
+        if (delayHours > 0) {
+            int negativePoints = (int) delayHours;
+            int newRating = (specialist.getComments().stream().mapToInt(Comment::getRating).average() != null ? specialist.getComments().stream().mapToInt(Comment::getRating).sum() : 0) - negativePoints;
+           // specialist.setRating(newRating);
+            Comment comment = new Comment();
+
+            if (newRating < 0)
+                specialist.setStatus(AccountStatus.DEACTIVATED);
+        }
+        // ... ذخیره تغییرات متخصص
     }
 
 }

@@ -99,4 +99,9 @@ public class ProposalServiceImpl implements ProposalService {
         List<Proposal> proposals = proposalRepository.findByOrderId(orderId);
         return proposals.size() == 1;
     }
+
+    @Override
+    public Proposal getProposalByOrderAndSpecialist(Long orderId, Long specialistId) {
+         return proposalRepository.findBySpecialistIdAndOrderId(specialistId, orderId).stream().findFirst().orElseThrow(() -> new RuntimeException("Proposal not found"));
+    }
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import ir.maktab127.dto.OrderRegisterDto;
+import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.OrderStatus;
 
@@ -22,4 +23,6 @@ public interface OrderService {
     void updateOrderStatus(Long orderId, OrderStatus status);
     List<Order> getOrdersByStatus(OrderStatus status);
     List<Order> getOrdersByServiceCategory(Long serviceCategoryId);
+
+    void payOrder(Long orderId, PaymentRequestDto paymentRequest);
 }

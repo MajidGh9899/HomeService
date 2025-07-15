@@ -25,7 +25,7 @@ public class Order extends BaseEntity<Long> {
     public static final String start_date="start_date";
     public static final String addresses="addresses";
     public static final String status_order="status";
-    public static final String created_at="created_at";
+
     public static final String  specialists="specialists_id";
 
     @ManyToOne(optional = false)

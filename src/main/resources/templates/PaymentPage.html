@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <title>پرداخت آنلاین</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background: #f5f5f5; }
+        .container { max-width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 24px; }
+        h2 { text-align: center; }
+        label { display: block; margin-top: 16px; }
+        input[type=text], input[type=password] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; }
+        .captcha-img { margin-top: 12px; }
+        .timer { color: #d32f2f; font-weight: bold; text-align: center; margin: 16px 0; }
+        button { width: 100%; background: #1976d2; color: #fff; border: none; padding: 12px; border-radius: 4px; font-size: 16px; margin-top: 20px; cursor: pointer; }
+        button:disabled { background: #aaa; }
+        .msg { text-align: center; margin-top: 16px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>پرداخت آنلاین</h2>
+    <div class="timer" id="timer">10:00</div>
+    <form id="payForm">
+        <label>شماره کارت
+            <input type="text" name="cardNumber" maxlength="16" required>
+        </label>
+        <label>CVV2
+            <input type="text" name="cvv2" maxlength="4" required>
+        </label>
+        <label>تاریخ انقضا (MM/YY)
+            <input type="text" name="expDate" maxlength="4" required>
+        </label>
+        <label>رمز دوم
+            <input type="password" name="password" maxlength="8" required>
+        </label>
+        <label>کد کپچا</label>
+        <img src="/api/payment/captcha" class="captcha-img" id="captchaImg" alt="کپچا">
+        <input type="text" name="captcha" maxlength="6" required>
+        <input type="hidden" name="token" value="[[${token}]]">
+        <button type="submit" id="payBtn">پرداخت</button>
+    </form>
+    <div class="msg" id="msg"></div>
+</div>
+<script>
+    // تایمر 10 دقیقه‌ای
+    let time = 600;
+    const timerEl = document.getElementById('timer');
+    const payBtn = document.getElementById('payBtn');
+    const msgEl = document.getElementById('msg');
+    const interval = setInterval(() => {
+        time--;
+        let min = Math.floor(time/60), sec = time%60;
+        timerEl.textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+        if (time <= 0) {
+            clearInterval(interval);
+            payBtn.disabled = true;
+            msgEl.textContent = 'مهلت پرداخت به پایان رسید.';
+        }
+    }, 1000);
+    // ارسال فرم پرداخت
+    document.getElementById('payForm').onsubmit = function(e) {
+        e.preventDefault();
+        if (time <= 0) return;
+        const data = new FormData(this);
+        fetch('/api/payment/submit', {
+            method: 'POST',
+            body: data
+        })
+            .then(r => r.text())
+            .then(txt => {
+                msgEl.textContent = txt;
+                payBtn.disabled = true;
+            });
+    };
+    // رفرش کپچا با کلیک روی عکس
+    document.getElementById('captchaImg').onclick = function() {
+        this.src = '/api/payment/captcha?' + Math.random();
+    };
+</script>
+</body>
+</html>

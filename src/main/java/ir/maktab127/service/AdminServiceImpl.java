@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -74,15 +75,32 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<UserResponseDto> searchUsers(UserSearchFilterDto filter) {
-        List<UserResponseDto> result = new java.util.ArrayList<>();
+        List<UserResponseDto> result = new ArrayList<>();
+
         if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("SPECIALIST")) {
             List<Specialist> specialists = specialistRepository.searchWithFilters(
                     filter.getFirstName(),
                     filter.getLastName(),
                     filter.getServiceName(),
-                    filter.getMinScore() != null ? filter.getMinScore().intValue() : null,
-                    filter.getMaxScore() != null ? filter.getMaxScore().intValue() : null
+                    filter.getMinScore(),
+                    filter.getMaxScore()
             );
+
+            // اعمال فیلترهای minScore و maxScore در جاوا
+            if (filter.getMinScore() != null || filter.getMaxScore() != null) {
+                specialists = specialists.stream()
+                        .filter(s -> {
+                            double avgRating = s.getComments().stream()
+                                    .mapToDouble(Comment::getRating).average().orElse(0.0);
+
+                            boolean meetsMin = filter.getMinScore() == null || avgRating >= filter.getMinScore();
+                            boolean meetsMax = filter.getMaxScore() == null || avgRating <= filter.getMaxScore();
+
+                            return meetsMin && meetsMax;
+                        })
+                        .toList();
+            }
+
             result.addAll(specialists.stream().map(s -> {
                 UserResponseDto dto = new UserResponseDto();
                 dto.setId(s.getId());
@@ -90,17 +108,27 @@ public class AdminServiceImpl implements AdminService {
                 dto.setFirstName(s.getFirstName());
                 dto.setLastName(s.getLastName());
                 dto.setEmail(s.getEmail());
-                dto.setScore((double) s.getComments().stream().mapToInt(Comment::getRating).sum());
-                if (s.getServiceCategories() != null && !s.getServiceCategories().isEmpty())
-                    dto.setServiceName(s.getServiceCategories().stream().map(ServiceCategory::getName).collect(Collectors.joining(", ")));
+
+                double avgRating = s.getComments().stream()
+                        .mapToDouble(Comment::getRating).average().orElse(0.0);
+                dto.setScore(avgRating);
+
+                if (s.getServiceCategories() != null && !s.getServiceCategories().isEmpty()) {
+                    dto.setServiceName(s.getServiceCategories().stream()
+                            .map(ServiceCategory::getName)
+                            .collect(Collectors.joining(", ")));
+                }
+
                 return dto;
             }).toList());
         }
+
         if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("CUSTOMER")) {
             List<Customer> customers = customerRepository.searchWithFilters(
                     filter.getFirstName(),
                     filter.getLastName()
             );
+
             result.addAll(customers.stream().map(c -> {
                 UserResponseDto dto = new UserResponseDto();
                 dto.setId(c.getId());
@@ -111,8 +139,8 @@ public class AdminServiceImpl implements AdminService {
                 return dto;
             }).toList());
         }
-        return result;
 
+        return result;
     }
 
 }

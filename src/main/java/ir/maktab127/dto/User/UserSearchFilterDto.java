@@ -10,6 +10,6 @@ public class UserSearchFilterDto {
     private String firstName;
     private String lastName;
     private String serviceName; // فقط برای متخصص
-    private Double minScore;    // فقط برای متخصص
-    private Double maxScore;
+    private Integer minScore;    // فقط برای متخصص
+    private Integer maxScore;
 }

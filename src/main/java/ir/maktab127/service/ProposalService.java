@@ -19,4 +19,7 @@ public interface ProposalService {
     List<Proposal> getProposalsBySpecialist(Long specialistId);
     void updateProposalStatus(Long proposalId, ProposalStatus status);
     boolean isFirstProposalForOrder(Long orderId);
+
+    //phase 3
+    Proposal getProposalByOrderAndSpecialist(Long orderId, Long specialistId);
 }

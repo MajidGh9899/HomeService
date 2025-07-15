@@ -1,6 +1,7 @@
 package ir.maktab127.controller;
 
 import ir.maktab127.dto.*;
+import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.*;
 import ir.maktab127.entity.user.Customer;
 import ir.maktab127.service.*;
@@ -205,6 +206,17 @@ public class CustomerController {
         order.setStatus(OrderStatus.COMPLETED);
         orderService.save(order);
         return ResponseEntity.ok().build();
+    }
+
+    //
+    @PostMapping("/{customerId}/orders/{orderId}/pay")
+    public ResponseEntity<Void> payOrder(@PathVariable Long customerId, @PathVariable Long orderId, @RequestBody PaymentRequestDto paymentRequest) {
+        try {
+            orderService.payOrder(orderId, paymentRequest);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
 
