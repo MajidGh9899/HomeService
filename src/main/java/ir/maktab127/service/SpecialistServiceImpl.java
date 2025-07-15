@@ -13,9 +13,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 @Service
@@ -32,8 +35,15 @@ public class SpecialistServiceImpl implements SpecialistService {
 
     @Transactional
     @Override
-    public Specialist register(Specialist specialist) {
-        specialist.setStatus(AccountStatus.NEW);
+    public Specialist register(Specialist specialist, MultipartFile profileImage) throws IOException {
+        if(profileImage == null)
+            specialist.setStatus(AccountStatus.NEW);
+        else{
+            String base64Image = Base64.getEncoder().encodeToString(profileImage.getBytes());
+            specialist.setProfileImage(base64Image);
+            specialist.setStatus(AccountStatus.PENDING);
+        }
+
         specialist.setCreateDate(LocalDateTime.now());
         return specialistRepository.save(specialist);
     }
@@ -77,7 +87,8 @@ public class SpecialistServiceImpl implements SpecialistService {
 
         specialist.setEmail(dto.getEmail());
         specialist.setPassword(dto.getPassword());
-        specialist.setProfileImagePath(dto.getProfileImagePath());
+        specialist.setProfileImage(dto.getProfileImage());
+
         specialist.setStatus(AccountStatus.PENDING);
         specialistRepository.save(specialist);
     }

@@ -23,5 +23,5 @@ public class SpecialistUpdateDto {
             message = "Password must be at least 8 characters, include uppercase, lowercase, digit, and special character")
     private String password;
 
-    private String profileImagePath;
+    private String profileImage;
 }

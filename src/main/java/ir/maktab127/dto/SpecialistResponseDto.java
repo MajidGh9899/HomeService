@@ -10,7 +10,7 @@ public class SpecialistResponseDto {
     private String firstName;
     private String lastName;
     private String email;
-    private String profileImagePath;
+    private String profileImage;
     private String status;
     private String registerDate;
 }

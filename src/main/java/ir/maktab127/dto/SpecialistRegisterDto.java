@@ -29,5 +29,5 @@ public class SpecialistRegisterDto {
     private String password;
 
 
-    private String profileImagePath;
+    private String profileImage;
 }

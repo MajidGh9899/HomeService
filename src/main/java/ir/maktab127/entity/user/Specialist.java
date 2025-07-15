@@ -16,8 +16,8 @@ import java.util.List;
 @NoArgsConstructor
 @DiscriminatorValue("specialist")
 public class Specialist  extends User {
-    @Column
-    private String profileImagePath;
+    @Column(name = "profile_image", columnDefinition = "TEXT")
+    private String profileImage;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

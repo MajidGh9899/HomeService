@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,9 +33,16 @@ public class SpecialistController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<SpecialistResponseDto> register(@Valid @RequestBody SpecialistRegisterDto dto) {
+    public ResponseEntity<?> register(@Valid @RequestBody SpecialistRegisterDto dto,
+                                                          @RequestParam("profileImage") MultipartFile profileImage) {
+        if (profileImage != null && !profileImage.isEmpty()) {
+            long maxSizeInBytes = 300 * 1024; // 300 KB
+            if (profileImage.getSize() > maxSizeInBytes) {
+                return ResponseEntity.badRequest().body("Max image size is 300 KB");
+            }
+        }
         Specialist specialist = SpecialistMapper.toEntity(dto);
-        Specialist saved = specialistService.register(specialist);
+        Specialist saved = specialistService.register(specialist,profileImage);
         return ResponseEntity.ok(SpecialistMapper.toResponseDto(saved));
     }
 
