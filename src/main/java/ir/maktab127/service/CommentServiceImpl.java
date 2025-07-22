@@ -50,7 +50,7 @@ public class CommentServiceImpl implements CommentService {
         Specialist specialist = specialistRepository.findById(dto.getSpecialistId())
                 .orElseThrow(() -> new IllegalArgumentException("Specialist not found"));
 
-        Comment comment = new Comment();
+        Comment comment = new Comment(5L);
         comment.setCustomer(customer);
         comment.setSpecialist(specialist);
         comment.setRating(dto.getRating());

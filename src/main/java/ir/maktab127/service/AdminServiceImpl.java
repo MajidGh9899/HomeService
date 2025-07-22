@@ -14,6 +14,9 @@ import ir.maktab127.repository.ServiceCategoryRepository;
 import ir.maktab127.repository.SpecialistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -74,32 +77,21 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<UserResponseDto> searchUsers(UserSearchFilterDto filter) {
+    public Page<UserResponseDto> searchUsers(UserSearchFilterDto filter, Pageable pageable) {
         List<UserResponseDto> result = new ArrayList<>();
 
         if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("SPECIALIST")) {
-            List<Specialist> specialists = specialistRepository.searchWithFilters(
+            Page<Specialist> specialists =  specialistRepository.searchWithFilters(
                     filter.getFirstName(),
                     filter.getLastName(),
                     filter.getServiceName(),
                     filter.getMinScore(),
-                    filter.getMaxScore()
+                    filter.getMaxScore(),
+                    pageable
+
             );
 
-            // اعمال فیلترهای minScore و maxScore در جاوا
-            if (filter.getMinScore() != null || filter.getMaxScore() != null) {
-                specialists = specialists.stream()
-                        .filter(s -> {
-                            double avgRating = s.getComments().stream()
-                                    .mapToDouble(Comment::getRating).average().orElse(0.0);
 
-                            boolean meetsMin = filter.getMinScore() == null || avgRating >= filter.getMinScore();
-                            boolean meetsMax = filter.getMaxScore() == null || avgRating <= filter.getMaxScore();
-
-                            return meetsMin && meetsMax;
-                        })
-                        .toList();
-            }
 
             result.addAll(specialists.stream().map(s -> {
                 UserResponseDto dto = new UserResponseDto();
@@ -108,10 +100,8 @@ public class AdminServiceImpl implements AdminService {
                 dto.setFirstName(s.getFirstName());
                 dto.setLastName(s.getLastName());
                 dto.setEmail(s.getEmail());
-
-                double avgRating = s.getComments().stream()
-                        .mapToDouble(Comment::getRating).average().orElse(0.0);
-                dto.setScore(avgRating);
+                // rating not average
+                dto.setScore(s.getComments().stream().mapToInt(Comment::getRating).average().orElse(0));
 
                 if (s.getServiceCategories() != null && !s.getServiceCategories().isEmpty()) {
                     dto.setServiceName(s.getServiceCategories().stream()
@@ -124,9 +114,10 @@ public class AdminServiceImpl implements AdminService {
         }
 
         if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("CUSTOMER")) {
-            List<Customer> customers = customerRepository.searchWithFilters(
+            Page<Customer> customers = customerRepository.searchWithFilters(
                     filter.getFirstName(),
-                    filter.getLastName()
+                    filter.getLastName(),
+                    pageable
             );
 
             result.addAll(customers.stream().map(c -> {
@@ -140,7 +131,13 @@ public class AdminServiceImpl implements AdminService {
             }).toList());
         }
 
-        return result;
+        int pageSize = pageable.getPageSize();
+        int pageNumber = pageable.getPageNumber();
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageSize), result.size());
+        List<UserResponseDto> pagedResult = result.subList(start, end);
+
+        return new PageImpl<>(pagedResult, pageable, result.size());
     }
 
 }

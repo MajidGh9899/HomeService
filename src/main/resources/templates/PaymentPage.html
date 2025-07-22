@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="fa" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>پرداخت آنلاین</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background: #f5f5f5; }
+        body { font-family: Tahoma, sans-serif; background: #f5f5f5; direction: rtl; }
         .container { max-width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 24px; }
         h2 { text-align: center; }
         label { display: block; margin-top: 16px; }
         input[type=text], input[type=password] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; }
-        .captcha-img { margin-top: 12px; }
+        .captcha-img { margin-top: 12px; cursor: pointer; }
         .timer { color: #d32f2f; font-weight: bold; text-align: center; margin: 16px 0; }
         button { width: 100%; background: #1976d2; color: #fff; border: none; padding: 12px; border-radius: 4px; font-size: 16px; margin-top: 20px; cursor: pointer; }
         button:disabled { background: #aaa; }
@@ -22,13 +22,13 @@
     <div class="timer" id="timer">10:00</div>
     <form id="payForm">
         <label>شماره کارت
-            <input type="text" name="cardNumber" maxlength="16" required>
+            <input type="text" name="cardNumber" maxlength="16" required pattern="[0-9]{16}" title="شماره کارت باید 16 رقم باشد">
         </label>
         <label>CVV2
-            <input type="text" name="cvv2" maxlength="4" required>
+            <input type="text" name="cvv2" maxlength="4" required pattern="[0-9]{3,4}" title="CVV2 باید 3 یا 4 رقم باشد">
         </label>
         <label>تاریخ انقضا (MM/YY)
-            <input type="text" name="expDate" maxlength="4" required>
+            <input type="text" name="expDate" maxlength="4" required pattern="[0-9]{2}/[0-9]{2}" title="فرمت تاریخ انقضا: MM/YY">
         </label>
         <label>رمز دوم
             <input type="password" name="password" maxlength="8" required>
@@ -36,7 +36,7 @@
         <label>کد کپچا</label>
         <img src="/api/payment/captcha" class="captcha-img" id="captchaImg" alt="کپچا">
         <input type="text" name="captcha" maxlength="6" required>
-        <input type="hidden" name="token" value="[[${token}]]">
+        <input type="hidden" name="token" th:value="${token}">
         <button type="submit" id="payBtn">پرداخت</button>
     </form>
     <div class="msg" id="msg"></div>
@@ -57,22 +57,31 @@
             msgEl.textContent = 'مهلت پرداخت به پایان رسید.';
         }
     }, 1000);
+
     // ارسال فرم پرداخت
-    document.getElementById('payForm').onsubmit = function(e) {
+    document.getElementById('payForm').onsubmit = async function(e) {
         e.preventDefault();
         if (time <= 0) return;
         const data = new FormData(this);
-        fetch('/api/payment/submit', {
-            method: 'POST',
-            body: data
-        })
-            .then(r => r.text())
-            .then(txt => {
-                msgEl.textContent = txt;
-                payBtn.disabled = true;
+        try {
+            const response = await fetch('/api/payment/submit', {
+                method: 'POST',
+                body: data
             });
+            const result = await response.json();
+            msgEl.textContent = result.message;
+            if (response.ok) {
+                payBtn.disabled = true;
+                setTimeout(() => window.location.href = '/success', 2000);
+            } else {
+                document.getElementById('captchaImg').src = '/api/payment/captcha?' + Math.random();
+            }
+        } catch (error) {
+            msgEl.textContent = 'خطا در ارتباط با سرور';
+        }
     };
-    // رفرش کپچا با کلیک روی عکس
+
+    // رفرش کپچا با کلیک روی تصویر
     document.getElementById('captchaImg').onclick = function() {
         this.src = '/api/payment/captcha?' + Math.random();
     };

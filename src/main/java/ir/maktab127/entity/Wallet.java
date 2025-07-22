@@ -24,4 +24,8 @@ public class Wallet extends BaseEntity<Long> {
     @Column(nullable = false)
     private BigDecimal balance;
 
+
+    public void setUserId(Long id) {
+        this.user.setId(id);
+    }
 }

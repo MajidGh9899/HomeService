@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SpecialistService {
-    Specialist register(Specialist specialist, MultipartFile profileImage) throws IOException;
+    Specialist register(Specialist specialist) throws IOException;
     Optional<Specialist> findById(Long id);
     Optional<Specialist> findByEmail(String email);
     List<Specialist> getAll();

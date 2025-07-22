@@ -10,10 +10,13 @@ import ir.maktab127.service.AdminService;
 import ir.maktab127.service.ServiceCategoryService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -127,9 +130,15 @@ public class AdminController {
 
     //filter phase-3
     @PostMapping("/users/search")
-    public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestBody UserSearchFilterDto filter) {
-        List<UserResponseDto> users = adminService.searchUsers(filter);
-        return ResponseEntity.ok(users);
+    public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestBody UserSearchFilterDto filter,@RequestParam(required = false) int page) {
+        Page<UserResponseDto> users = adminService.searchUsers(filter, Pageable.ofSize(page));
+        return   ResponseEntity.ok(users.getContent());
     }
 
 }
+//HOTFIX-PH3
+//UNIT TEST
+//        PERFORMANCE QUERY
+// VALIDATION CHARGE WalletController
+//ORDER 1
+//

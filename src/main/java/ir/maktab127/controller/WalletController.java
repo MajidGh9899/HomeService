@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -13,16 +15,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WalletController {
     private final WalletService walletService;
-
-    @PostMapping("/customer/{customerId}/charge")
-    public ResponseEntity<String> chargeWallet(@PathVariable Long customerId, @RequestBody WalletChargeRequestDto request) {
-        // تولید توکن پرداخت (برای سادگی: UUID)
-        String token = UUID.randomUUID().toString();
-        // ذخیره درخواست شارژ (در دیتابیس یا حافظه - اینجا فقط شبیه‌سازی)
-        // ...
-
-        String payLink = "http://localhost:8080/pay/" + token;
-
-        return ResponseEntity.ok(payLink);
+    @PostMapping("charge/{customerId}")
+    public ResponseEntity<Map<String, String>> chargeWallet(@PathVariable Long customerId, @RequestBody WalletChargeRequestDto request) {
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid amount"));
+        }
+        String payLink = walletService.createPaymentRequest(customerId, request.getAmount());
+        return ResponseEntity.ok(Map.of("payLink", payLink));
     }
 }
+

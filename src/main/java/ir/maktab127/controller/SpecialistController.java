@@ -5,6 +5,7 @@ import ir.maktab127.entity.Order;
 import ir.maktab127.entity.OrderStatus;
 import ir.maktab127.entity.Proposal;
 import ir.maktab127.entity.ProposalStatus;
+import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.service.*;
 import jakarta.validation.Valid;
@@ -36,21 +37,24 @@ public class SpecialistController {
 
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> register(@Valid @RequestBody SpecialistRegisterDto dto,
-                                                          @RequestPart("profileImage") MultipartFile profileImage) throws IOException {
-        String base64Image;
-        if (profileImage != null && !profileImage.isEmpty()) {
-            long maxSizeInBytes = 300 * 1024; // 300 KB
+    public ResponseEntity<?> register(
+            @Valid @RequestPart("dto") SpecialistRegisterDto dto,
+            @RequestPart(value = "profileImageUp", required = false) MultipartFile profileImageUp) throws IOException {
 
-          //  specialist.setProfileImage(base64Image);
-            if (profileImage.getSize() > maxSizeInBytes) {
+        // اعتبارسنجی اندازه و فرمت فایل
+        if (profileImageUp != null && !profileImageUp.isEmpty()) {
+            long maxSizeInBytes = 300 * 1024; // 300 KB
+            String contentType = profileImageUp.getContentType();
+
+            if (profileImageUp.getSize() > maxSizeInBytes) {
                 return ResponseEntity.badRequest().body("Max image size is 300 KB");
             }
+            String base64Image = Base64.getEncoder().encodeToString(profileImageUp.getBytes());
+            dto.setProfileImage(base64Image);
         }
-        base64Image = Base64.getEncoder().encodeToString(profileImage.getBytes());
-        dto.setProfileImage(base64Image);
+
         Specialist specialist = SpecialistMapper.toEntity(dto);
-        Specialist saved = specialistService.register(specialist,profileImage);
+        Specialist saved = specialistService.register(specialist);
         return ResponseEntity.ok(SpecialistMapper.toResponseDto(saved));
     }
 
@@ -91,6 +95,20 @@ public class SpecialistController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(null); // Conflict
         }
+    }
+    @PostMapping(value = "/update-profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateProfileImage(
+            @RequestParam Long specialistId,
+            @RequestPart("profileImage") MultipartFile profileImage) throws IOException {
+        // اعتبارسنجی و ذخیره تصویر
+        Specialist specialist = specialistService.findById(specialistId).get();
+        if (profileImage != null && !profileImage.isEmpty()) {
+            String base64Image = Base64.getEncoder().encodeToString(profileImage.getBytes());
+            specialist.setProfileImage(base64Image);
+
+            specialistService.register(specialist);
+        }
+        return ResponseEntity.ok("Profile image updated");
     }
     //offer to do a service
     @PostMapping("/addProposal")

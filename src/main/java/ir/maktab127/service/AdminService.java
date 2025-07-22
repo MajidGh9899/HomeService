@@ -7,6 +7,8 @@ import ir.maktab127.dto.User.UserResponseDto;
 import ir.maktab127.dto.User.UserSearchFilterDto;
 import ir.maktab127.entity.user.Admin;
 import ir.maktab127.entity.user.Specialist;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AdminService {
     Admin save(Admin admin);
@@ -22,5 +24,5 @@ public interface AdminService {
     void removeSpecialistFromServiceCategory(Long specialistId, Long serviceCategoryId);
 
     //phase3
-    List<UserResponseDto> searchUsers(UserSearchFilterDto filter);
+    Page<UserResponseDto> searchUsers(UserSearchFilterDto filter, Pageable pageable);
 }

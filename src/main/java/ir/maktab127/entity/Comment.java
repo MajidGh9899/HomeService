@@ -30,7 +30,7 @@ public class Comment extends BaseEntity<Long> {
     @JoinColumn(name = customers, nullable = false)
     private Customer customer;
 
-    @OneToOne(optional = true)
+    @ManyToOne(optional = true)
     @JoinColumn(name = "order_id", nullable = true)
     private Order order;
 
@@ -46,4 +46,8 @@ public class Comment extends BaseEntity<Long> {
 
     @Column(name = created_at, nullable = false)
     private LocalDateTime createdAt;
+
+    public Comment(Long id){
+        this.setId(id);
+    }
 }

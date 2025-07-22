@@ -20,4 +20,7 @@ public interface WalletService {
     BigDecimal getBalanceByUserId(Long userId);
 
     List<WalletTransaction> getTransactionsByUserId(Long userId);
+    boolean processPayment(String token);
+    String createPaymentRequest(Long customerId, BigDecimal amount);
+    boolean isValidPaymentToken(String token);
 }

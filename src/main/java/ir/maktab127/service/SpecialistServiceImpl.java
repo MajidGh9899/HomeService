@@ -4,11 +4,13 @@ import ir.maktab127.dto.SpecialistUpdateDto;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.OrderStatus;
 import ir.maktab127.entity.Proposal;
+import ir.maktab127.entity.Wallet;
 import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.repository.OrderRepository;
 import ir.maktab127.repository.ProposalRepository;
 import ir.maktab127.repository.SpecialistRepository;
+import ir.maktab127.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Base64;
@@ -30,20 +33,23 @@ public class SpecialistServiceImpl implements SpecialistService {
     private final OrderRepository orderRepository;
     @Autowired
     private final ProposalRepository proposalRepository;
+    @Autowired
+    private final WalletRepository walletRepository;
 
 
 
     @Transactional
     @Override
-    public Specialist register(Specialist specialist, MultipartFile profileImage) throws IOException {
-        if(profileImage == null)
+    public Specialist register(Specialist specialist) {
+        // تنظیم وضعیت حساب کاربری
+        if (specialist.getProfileImage() == null || specialist.getProfileImage().isEmpty()) {
             specialist.setStatus(AccountStatus.NEW);
-        else{
-
+        } else {
             specialist.setStatus(AccountStatus.PENDING);
         }
-
         specialist.setCreateDate(LocalDateTime.now());
+
+
         return specialistRepository.save(specialist);
     }
 

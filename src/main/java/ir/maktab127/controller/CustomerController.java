@@ -8,7 +8,6 @@ import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -232,7 +231,7 @@ public class CustomerController {
             return ResponseEntity.badRequest().build();
         }
         // ثبت نظر
-        Comment comment = new Comment();
+        Comment comment = new Comment(5L);
         comment.setCustomer(order.getCustomer());
         comment.setSpecialist(dto.getSpecialistId() != null ? new Specialist() {{ setId(dto.getSpecialistId()); }} : null);
         comment.setRating(dto.getRating());
