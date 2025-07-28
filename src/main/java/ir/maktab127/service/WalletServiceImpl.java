@@ -26,6 +26,7 @@ public class WalletServiceImpl implements WalletService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final CustomerService customerRepository;
     private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
 
 
     @Override
@@ -99,6 +100,7 @@ public class WalletServiceImpl implements WalletService {
         paymentRequest.setCreateDate(LocalDateTime.now());
         paymentRequest.setExpiresAt(LocalDateTime.now().plusMinutes(10)); // 10 دقیقه مهلت
         paymentRequest.setUsed(false);
+        paymentService.save(paymentRequest);
 
         paymentRepository.save(paymentRequest);
         return "http://localhost:8080/pay/" + paymentRequest.getToken();

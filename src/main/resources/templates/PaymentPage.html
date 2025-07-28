@@ -22,19 +22,19 @@
     <div class="timer" id="timer">10:00</div>
     <form id="payForm">
         <label>شماره کارت
-            <input type="text" name="cardNumber" maxlength="16" required pattern="[0-9]{16}" title="شماره کارت باید 16 رقم باشد">
+            <input type="text" name="cardNumber" maxlength="16"  title="شماره کارت باید 16 رقم باشد">
         </label>
         <label>CVV2
-            <input type="text" name="cvv2" maxlength="4" required pattern="[0-9]{3,4}" title="CVV2 باید 3 یا 4 رقم باشد">
+            <input type="text" name="cvv2" maxlength="4" title="CVV2 باید 3 یا 4 رقم باشد">
         </label>
         <label>تاریخ انقضا (MM/YY)
-            <input type="text" name="expDate" maxlength="4" required pattern="[0-9]{2}/[0-9]{2}" title="فرمت تاریخ انقضا: MM/YY">
+            <input type="text" name="expDate" maxlength="4"  title="فرمت تاریخ انقضا: MM/YY">
         </label>
         <label>رمز دوم
             <input type="password" name="password" maxlength="8" required>
         </label>
         <label>کد کپچا</label>
-        <img src="/api/payment/captcha" class="captcha-img" id="captchaImg" alt="کپچا">
+        <img src="pay/api/payment/captcha" class="captcha-img" id="captchaImg" alt="کپچا">
         <input type="text" name="captcha" maxlength="6" required>
         <input type="hidden" name="token" th:value="${token}">
         <button type="submit" id="payBtn">پرداخت</button>
@@ -74,7 +74,7 @@
                 payBtn.disabled = true;
                 setTimeout(() => window.location.href = '/success', 2000);
             } else {
-                document.getElementById('captchaImg').src = '/api/payment/captcha?' + Math.random();
+                document.getElementById('captchaImg').src = 'pay/api/payment/captcha?' + Math.random();
             }
         } catch (error) {
             msgEl.textContent = 'خطا در ارتباط با سرور';

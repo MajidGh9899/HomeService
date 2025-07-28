@@ -40,21 +40,49 @@ public class PaymentController {
 
     @GetMapping(value = "/api/payment/captcha", produces = MediaType.IMAGE_PNG_VALUE)
     public void getCaptcha(HttpServletResponse response, HttpSession session) throws IOException {
+//        String captchaText = String.valueOf((int) (Math.random() * 900000 + 100000));
+//        session.setAttribute("captcha", captchaText);
+//
+//        int width = 160;
+//        int height = 50;
+//        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+//        Graphics2D g2d = bufferedImage.createGraphics();
+//
+//        g2d.setColor(Color.WHITE);
+//        g2d.fillRect(0, 0, width, height);
+//        g2d.setFont(new Font("Arial", Font.BOLD, 30));
+//        g2d.setColor(Color.BLUE);
+//        g2d.drawString(captchaText, 20, 35);
+//        g2d.dispose();
+//
+//        response.setContentType(MediaType.IMAGE_PNG_VALUE);
+//        ImageIO.write(bufferedImage, "png", response.getOutputStream());
         String captchaText = String.valueOf((int) (Math.random() * 900000 + 100000));
-        session.setAttribute("captcha", captchaText);
 
+        // اندازه تصویر
         int width = 160;
         int height = 50;
+
+        // ساخت تصویر
         BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = bufferedImage.createGraphics();
 
+        // پس‌زمینه سفید
         g2d.setColor(Color.WHITE);
         g2d.fillRect(0, 0, width, height);
+
+        // رسم متن کپچا
         g2d.setFont(new Font("Arial", Font.BOLD, 30));
         g2d.setColor(Color.BLUE);
         g2d.drawString(captchaText, 20, 35);
-        g2d.dispose();
 
+        g2d.dispose(); // بستن منابع گرافیکی
+
+        // ذخیره تصویر در فایل (در پوشه temp مثلاً)
+        File outputFile = new File("captcha_" + captchaText + ".png");
+        ImageIO.write(bufferedImage, "png", outputFile);
+
+        // ارسال تصویر به مرورگر
         response.setContentType(MediaType.IMAGE_PNG_VALUE);
         ImageIO.write(bufferedImage, "png", response.getOutputStream());
     }
