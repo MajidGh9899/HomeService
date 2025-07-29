@@ -4,6 +4,7 @@ import ir.maktab127.dto.SpecialistUpdateDto;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.Proposal;
 import ir.maktab127.entity.user.Specialist;
+import jakarta.mail.MessagingException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SpecialistService {
-    Specialist register(Specialist specialist) throws IOException;
+    Specialist register(Specialist specialist) throws IOException, MessagingException;
     Optional<Specialist> findById(Long id);
     Optional<Specialist> findByEmail(String email);
     List<Specialist> getAll();
@@ -24,6 +25,9 @@ public interface SpecialistService {
     List<Order> getAvailableOrdersForSpecialist(Long specialistId);
     List<Proposal> getSpecialistProposals(Long specialistId);
     boolean canSubmitProposal(Long specialistId, Long orderId);
+
+    void verifyEmail(String token) throws IllegalStateException;
+    Specialist updateProfileImage(Long id, String base64Image);
 
 
 }

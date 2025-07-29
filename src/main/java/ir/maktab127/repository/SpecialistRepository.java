@@ -32,4 +32,6 @@ public interface SpecialistRepository extends JpaRepository<Specialist, Long> {
             @Param("minScore") Integer minScore,
             @Param("maxScore") Integer maxScore,
             Pageable pageable);
+
+    Optional<Specialist> findByEmailVerificationToken(String token);
 }

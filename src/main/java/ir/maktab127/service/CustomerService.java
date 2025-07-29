@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import ir.maktab127.dto.CustomerUpdateDto;
 import ir.maktab127.entity.user.Customer;
+import jakarta.mail.MessagingException;
 
 public interface CustomerService {
     Customer save(Customer customer);
@@ -14,4 +15,7 @@ public interface CustomerService {
     void delete(Long id);
     Optional<Customer> login(String email, String password);
     void updateInfo(Long customerId, CustomerUpdateDto dto);
+
+    void verifyEmail(String token) throws IllegalStateException;
+    Customer register(Customer customer) throws MessagingException;
 }

@@ -36,27 +36,7 @@ public class SpecialistController {
 
 
 
-    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> register(
-            @Valid @RequestPart("dto") SpecialistRegisterDto dto,
-            @RequestPart(value = "profileImageUp", required = false) MultipartFile profileImageUp) throws IOException {
 
-        // اعتبارسنجی اندازه و فرمت فایل
-        if (profileImageUp != null && !profileImageUp.isEmpty()) {
-            long maxSizeInBytes = 300 * 1024; // 300 KB
-            String contentType = profileImageUp.getContentType();
-
-            if (profileImageUp.getSize() > maxSizeInBytes) {
-                return ResponseEntity.badRequest().body("Max image size is 300 KB");
-            }
-            String base64Image = Base64.getEncoder().encodeToString(profileImageUp.getBytes());
-            dto.setProfileImage(base64Image);
-        }
-
-        Specialist specialist = SpecialistMapper.toEntity(dto);
-        Specialist saved = specialistService.register(specialist);
-        return ResponseEntity.ok(SpecialistMapper.toResponseDto(saved));
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<SpecialistResponseDto> getById(@PathVariable Long id) {
@@ -101,12 +81,12 @@ public class SpecialistController {
             @RequestParam Long specialistId,
             @RequestPart("profileImage") MultipartFile profileImage) throws IOException {
         // اعتبارسنجی و ذخیره تصویر
-        Specialist specialist = specialistService.findById(specialistId).get();
+
         if (profileImage != null && !profileImage.isEmpty()) {
             String base64Image = Base64.getEncoder().encodeToString(profileImage.getBytes());
-            specialist.setProfileImage(base64Image);
 
-            specialistService.register(specialist);
+
+            specialistService.updateProfileImage(specialistId, base64Image);
         }
         return ResponseEntity.ok("Profile image updated");
     }

@@ -18,7 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 @DiscriminatorColumn(name = "user_type")
 @Table(name = User.table)
-public abstract class User extends BaseEntity<Long> {
+public  class User extends BaseEntity<Long> {
     public static final String table = "users";
     public static final String first_names= "first_name";
     public static final String last_names= "last_name";
@@ -43,6 +43,7 @@ public abstract class User extends BaseEntity<Long> {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     private Set<Role> roles;
+
 
 
 }

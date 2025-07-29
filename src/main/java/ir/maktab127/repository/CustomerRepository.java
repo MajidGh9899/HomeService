@@ -22,5 +22,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             @Param("lastName") String lastName,
             Pageable pageable);
 
+    Optional<Customer> findByEmailVerificationToken(String token);
+
 
 }

@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import ir.maktab127.dto.OrderRegisterDto;
+import ir.maktab127.dto.ServiceHistoryDetailDto;
+import ir.maktab127.dto.ServiceHistoryFilterDto;
+import ir.maktab127.dto.ServiceHistorySummaryDto;
 import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.OrderStatus;
@@ -25,4 +28,11 @@ public interface OrderService {
     List<Order> getOrdersByServiceCategory(Long serviceCategoryId);
 
     void payOrder(Long orderId, PaymentRequestDto paymentRequest);
+
+    //phase4
+    List<ServiceHistorySummaryDto> getServiceHistorySummary(ServiceHistoryFilterDto filter);
+    ServiceHistoryDetailDto getServiceHistoryDetail(Long orderId);
+
+    List<Order> getOrderHistory(long customerId);
+    List<Order> getOrderHistoryByStatus(long customerId, OrderStatus status);
 }

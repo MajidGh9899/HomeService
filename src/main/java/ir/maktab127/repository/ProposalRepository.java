@@ -14,4 +14,6 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
     List<Proposal> findByOrderId(Long orderId);
     List<Proposal> findBySpecialistIdAndOrderId(Long specialistId, Long orderId);
     List<Proposal> findByStatus(ProposalStatus status);
+
+    Optional<Proposal> findByOrderIdAndStatus(Long orderId,  ProposalStatus status);
 }

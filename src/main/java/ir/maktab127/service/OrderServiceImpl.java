@@ -1,6 +1,6 @@
 package ir.maktab127.service;
 
-import ir.maktab127.dto.OrderRegisterDto;
+import ir.maktab127.dto.*;
 import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.*;
 import ir.maktab127.entity.user.AccountStatus;
@@ -19,6 +19,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -35,6 +37,9 @@ public class OrderServiceImpl implements OrderService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final ProposalService proposalService;
     private final SpecialistRepository specialistRepository;
+    private final ProposalRepository proposalRepository;
+    private final CommentRepository commentRepository;
+
 
 
     @Transactional
@@ -224,4 +229,118 @@ public class OrderServiceImpl implements OrderService {
 
 
         }
-    }}
+    }
+
+    @Override
+    public List<ServiceHistorySummaryDto> getServiceHistorySummary(ServiceHistoryFilterDto filter) {
+
+        Long customerId = null;
+        Long specialistId = null;
+
+        if ("CUSTOMER".equals(filter.getUserType()) && filter.getUserId() != null) {
+            customerId = filter.getUserId();
+        } else if ("SPECIALIST".equals(filter.getUserType()) && filter.getUserId() != null) {
+            specialistId = filter.getUserId();
+        }
+
+        List<Order> orders = orderRepository.findOrdersWithFilters(
+                filter.getStartDate(),
+                filter.getEndDate(),
+                filter.getOrderStatus(),
+                filter.getServiceCategoryId(),
+                customerId,
+                specialistId
+        );
+
+        return orders.stream().map(order -> {
+
+            String specialistName = "";
+            if (order.getStatus() != OrderStatus.WAITING_FOR_PROPOSAL) {
+                Optional<Proposal> acceptedProposal = proposalRepository.findByOrderIdAndStatus(order.getId(), ProposalStatus.ACCEPTED);
+                if (acceptedProposal.isPresent()) {
+                    specialistName = acceptedProposal.get().getSpecialist().getFirstName() + " " +
+                            acceptedProposal.get().getSpecialist().getLastName();
+                }
+            }
+
+            return new ServiceHistorySummaryDto(
+                    order.getId(),
+                    order.getCustomer().getFirstName() + " " + order.getCustomer().getLastName(),
+                    specialistName,
+                    order.getService().getName(),
+                    order.getProposedPrice(),
+                    order.getStatus(),
+                    order.getStartDate(),
+                    order.getCreateDate(),
+                    order.getAddress()
+            );
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public ServiceHistoryDetailDto getServiceHistoryDetail(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        ServiceHistoryDetailDto detailDto = new ServiceHistoryDetailDto();
+        detailDto.setOrderId(order.getId());
+        detailDto.setDescription(order.getDescription());
+        detailDto.setProposedPrice(order.getProposedPrice());
+        detailDto.setStartDate(order.getStartDate());
+        detailDto.setCreatedAt(order.getCreateDate());
+        detailDto.setAddress(order.getAddress());
+        detailDto.setStatus(order.getStatus());
+
+
+        detailDto.setCustomerId(order.getCustomer().getId());
+        detailDto.setCustomerName(order.getCustomer().getFirstName() + " " + order.getCustomer().getLastName());
+        detailDto.setCustomerEmail(order.getCustomer().getEmail());
+
+
+
+        Optional<Proposal> acceptedProposal = proposalRepository.findByOrderIdAndStatus(order.getId(), ProposalStatus.ACCEPTED);
+        if (acceptedProposal.isPresent()) {
+            Specialist specialist = acceptedProposal.get().getSpecialist();
+            detailDto.setSpecialistId(specialist.getId());
+            detailDto.setSpecialistName(specialist.getFirstName() + " " + specialist.getLastName());
+            detailDto.setSpecialistEmail(specialist.getEmail());
+
+        }
+
+
+        detailDto.setServiceId(order.getService().getId());
+        detailDto.setServiceName(order.getService().getName());
+        detailDto.setServiceDescription(order.getService().getDescription());
+
+
+        List<Proposal> proposals = proposalRepository.findByOrderId(order.getId());
+        List<ProposalResponseDto> proposalDtos = proposals.stream()
+                .map(ProposalMapper::toResponseDto)
+                .collect(Collectors.toList());
+        detailDto.setProposals(proposalDtos);
+
+
+        List<Comment> comments = commentRepository.findByOrderId(order.getId());
+        List<CommentResponseDto> commentDtos = comments.stream()
+                .map(CommentMapper::toResponseDto)
+                .collect(Collectors.toList());
+        detailDto.setComments(commentDtos);
+
+        return detailDto;
+    }
+    @Override
+    @Transactional
+    public List<Order> getOrderHistory(long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+        return orderRepository.findByCustomer(customer);
+    }
+    @Override
+    @Transactional
+    public List<Order> getOrderHistoryByStatus(long customerId, OrderStatus status) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+        return orderRepository.findByCustomerAndStatus(customer, status);
+    }
+
+}

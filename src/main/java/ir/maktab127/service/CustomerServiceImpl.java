@@ -3,9 +3,12 @@ package ir.maktab127.service;
 import ir.maktab127.dto.CustomerUpdateDto;
 import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Customer;
+import ir.maktab127.entity.user.Role;
 import ir.maktab127.repository.CustomerRepository;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,11 +17,16 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
     @Autowired
     private final CustomerRepository customerRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -48,6 +56,47 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setLastName(dto.getLastName());
         customer.setEmail(dto.getEmail());
         customer.setPassword(dto.getPassword());
+        customerRepository.save(customer);
+    }
+    @Transactional
+    public Customer register(Customer customer) throws MessagingException {
+        if (customer.getEmail() == null || !customer.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        if (customerRepository.findByEmail(customer.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+        if (customer.getPassword() == null || customer.getPassword().length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters");
+        }
+
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+        customer.setRoles(Set.of(Role.CUSTOMER));
+
+        customer.setCreateDate(LocalDateTime.now());
+        customer.setEmailVerified(false);
+        customer.setEmailVerificationToken(UUID.randomUUID().toString());
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        // Send verification email
+        emailService.sendVerificationEmail(savedCustomer.getEmail(), savedCustomer.getEmailVerificationToken());
+
+
+
+        return savedCustomer;
+    }
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        Customer customer = customerRepository.findByEmailVerificationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid verification token"));
+        if (customer.isEmailVerified()) {
+            throw new IllegalStateException("Email already verified");
+        }
+        customer.setEmailVerified(true);
+        customer.setEmailVerificationToken(null);
+
         customerRepository.save(customer);
     }
 }

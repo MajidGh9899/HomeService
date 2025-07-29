@@ -6,13 +6,16 @@ import ir.maktab127.entity.OrderStatus;
 import ir.maktab127.entity.Proposal;
 import ir.maktab127.entity.Wallet;
 import ir.maktab127.entity.user.AccountStatus;
+import ir.maktab127.entity.user.Role;
 import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.repository.OrderRepository;
 import ir.maktab127.repository.ProposalRepository;
 import ir.maktab127.repository.SpecialistRepository;
 import ir.maktab127.repository.WalletRepository;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,9 +24,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
 @Service
 @RequiredArgsConstructor
 public class SpecialistServiceImpl implements SpecialistService {
@@ -35,22 +37,59 @@ public class SpecialistServiceImpl implements SpecialistService {
     private final ProposalRepository proposalRepository;
     @Autowired
     private final WalletRepository walletRepository;
-
+    private final   EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
 
     @Transactional
     @Override
-    public Specialist register(Specialist specialist) {
+    public Specialist register(Specialist specialist) throws MessagingException {
         // تنظیم وضعیت حساب کاربری
-        if (specialist.getProfileImage() == null || specialist.getProfileImage().isEmpty()) {
-            specialist.setStatus(AccountStatus.NEW);
-        } else {
-            specialist.setStatus(AccountStatus.PENDING);
+        if (specialistRepository.findByEmail(specialist.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
         }
-        specialist.setCreateDate(LocalDateTime.now());
 
+        specialist.setStatus(AccountStatus.NEW);
 
+        specialist.setPassword(passwordEncoder.encode(specialist.getPassword()));
+        specialist.setRoles(Set.of(Role.SPECIALIST));
+        specialist.setEmailVerified(false);
+        specialist.setEmailVerificationToken(UUID.randomUUID().toString());
+        Specialist savedSpecialist = specialistRepository.save(specialist);
+
+        // Send verification email
+        emailService.sendVerificationEmail(savedSpecialist.getEmail(), savedSpecialist.getEmailVerificationToken());
+
+        return savedSpecialist;
+    }
+    @Transactional
+    public void verifyEmail(String token) {
+        Specialist specialist = specialistRepository.findByEmailVerificationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid verification token"));
+        if (specialist.isEmailVerified()) {
+            throw new IllegalStateException("Email already verified");
+        }
+        specialist.setEmailVerified(true);
+        specialist.setEmailVerificationToken(null); // Invalidate token
+        if(specialist.getProfileImage()!=null)
+            updateSpecialistStatus(specialist);
+        specialistRepository.save(specialist);
+    }
+    @Transactional
+    public Specialist updateProfileImage(Long id, String base64Image) {
+        Specialist specialist = specialistRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Specialist not found"));
+        specialist.setProfileImage(base64Image);
+        updateSpecialistStatus(specialist);
         return specialistRepository.save(specialist);
+    }
+
+    private void updateSpecialistStatus(Specialist specialist) {
+        if (specialist.isEmailVerified() && specialist.getProfileImage() != null) {
+            specialist.setStatus(AccountStatus.PENDING);
+        }else {
+            throw new RuntimeException("Email not verified or profile image not uploaded");
+        }
     }
 
     @Override

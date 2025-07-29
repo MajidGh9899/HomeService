@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,13 +31,9 @@ public class CustomerController {
     private final OrderService orderService;
     private final CommentService commentService;
     private final ProposalService proposalService;
+    private final WalletService walletService;
 
-    @PostMapping("/register")
-    public ResponseEntity<CustomerResponseDto> register(@Valid @RequestBody CustomerRegisterDto dto) {
-        Customer customer = CustomerMapper.toEntity(dto);
-        Customer saved = customerService.save(customer);
-        return ResponseEntity.ok(CustomerMapper.toResponseDto(saved));
-    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponseDto> getById(@PathVariable Long id) {
         Optional<Customer> customer = customerService.findById(id);
@@ -191,7 +189,7 @@ public class CustomerController {
         return ResponseEntity.ok().build();
     }
 
-    // اعلام پایان کار توسط مشتری
+
     @PostMapping("/{customerId}/orders/{orderId}/complete")
     public ResponseEntity<Void> completeOrder(
             @PathVariable Long customerId,
@@ -240,6 +238,32 @@ public class CustomerController {
         commentService.save(comment);
         return ResponseEntity.ok().build();
     }
+    @GetMapping("/balance")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<java.math.BigDecimal> getBalance() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer  customer = customerService.findByEmail(email).orElseThrow();
+        return ResponseEntity.ok(walletService.getBalanceByUserId(customer.getId()));
+    }
+    @GetMapping("/customer/orders")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<List<Order>> getOrderHistory() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer  customer = customerService.findByEmail(email).orElseThrow();
+        List<Order> orders = orderService.getOrderHistory(customer.getId());
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/customer/orders/status")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<List<Order>> getOrderHistoryByStatus(@RequestParam OrderStatus status) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer  customer = customerService.findByEmail(email).orElseThrow();
+
+        List<Order> orders = orderService.getOrderHistoryByStatus(customer.getId(), status);
+        return ResponseEntity.ok(orders);
+    }
+
 
 
 }

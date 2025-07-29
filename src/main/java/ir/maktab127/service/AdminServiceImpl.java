@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class AdminServiceImpl implements AdminService {
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final CustomerRepository customerRepository;
 
-
+    @Transactional
     @Override
     public Admin save(Admin admin) { return adminRepository.save(admin); }
     @Override
@@ -41,7 +42,10 @@ public class AdminServiceImpl implements AdminService {
     public Optional<Admin> findByEmail(String email) { return adminRepository.findByEmail(email); }
     @Override
     public List<Admin> getAll() { return adminRepository.findAll(); }
+
+    @Transactional
     @Override
+
     public void delete(Long id) { adminRepository.findById(id).ifPresent(adminRepository::delete); }
 
     @Override
@@ -67,7 +71,7 @@ public class AdminServiceImpl implements AdminService {
             specialistRepository.save(specialist);
         }
     }
-
+    @Transactional
     @Override
     public void removeSpecialistFromServiceCategory(Long specialistId, Long serviceCategoryId) {
         Specialist specialist = specialistRepository.findById(specialistId).orElseThrow();
@@ -75,7 +79,7 @@ public class AdminServiceImpl implements AdminService {
         specialist.getServiceCategories().remove(serviceCategory);
         specialistRepository.save(specialist);
     }
-
+    @Transactional
     @Override
     public Page<UserResponseDto> searchUsers(UserSearchFilterDto filter, Pageable pageable) {
         List<UserResponseDto> result = new ArrayList<>();

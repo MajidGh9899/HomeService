@@ -12,20 +12,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private AdminRepository adminRepository;
 
-    private SpecialistRepository specialistRepository;
+    private final AdminRepository adminRepository;
+
+    private final SpecialistRepository specialistRepository;
 
 
-    private CustomerRepository customerRepository;
+    private final CustomerRepository customerRepository;
+
+
+    public CustomUserDetailsService(AdminRepository adminRepository, SpecialistRepository specialistRepository, CustomerRepository customerRepository) {
+        this.adminRepository = adminRepository;
+        this.specialistRepository = specialistRepository;
+        this.customerRepository = customerRepository;
+
+    }
+
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
