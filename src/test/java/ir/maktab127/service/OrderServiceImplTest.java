@@ -67,7 +67,6 @@ class OrderServiceImplTest {
 
         Pageable pageable = PageRequest.of(0, 10);
 
-        // Mock orderRepository.findAll to return an empty page or sample data
         when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(Page.empty());
 
@@ -76,7 +75,7 @@ class OrderServiceImplTest {
         assertNotNull(result);
         assertEquals(0, result.getTotalElements());
 
-        // verify findAll called once
+
         verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
     }
 
