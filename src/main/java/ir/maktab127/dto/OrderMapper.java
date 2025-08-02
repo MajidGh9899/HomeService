@@ -1,5 +1,6 @@
 package ir.maktab127.dto;
 
+import ir.maktab127.dto.order.OrderSummaryDTO;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.Proposal;
 
@@ -24,5 +25,14 @@ public class OrderMapper {
         OrderResponseDto dto = toResponseDto(order);
         dto.setProposalId(proposal.getId());
         return dto;
+    }
+    public static OrderSummaryDTO  toSummaryDto(Order order) {
+        return new OrderSummaryDTO(order.getId(),
+                order.getCustomer() != null ? order.getCustomer().getFirstName() + " " + order.getCustomer().getLastName() : null,
+                order.getSpecialist() != null ? order.getSpecialist().getFirstName() + " " + order.getSpecialist().getLastName() : null,
+                order.getService() != null ? order.getService().getName() : null,
+                order.getCreateDate(),
+                order.getStatus());
+
     }
 }

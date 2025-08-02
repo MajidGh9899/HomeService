@@ -4,6 +4,8 @@ package ir.maktab127.controller;
 import ir.maktab127.dto.*;
 import ir.maktab127.dto.User.UserResponseDto;
 import ir.maktab127.dto.User.UserSearchFilterDto;
+import ir.maktab127.dto.order.OrderSummaryDTO;
+import ir.maktab127.entity.Order;
 import ir.maktab127.entity.ServiceCategory;
 import ir.maktab127.entity.user.Admin;
 import ir.maktab127.service.AdminService;
@@ -152,16 +154,16 @@ public class AdminController {
         return   ResponseEntity.ok(users.getContent());
     }
 
-    //
-    @PostMapping("/service-history/summary")
+
+    @GetMapping("/service-history")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ServiceHistorySummaryDto>> getServiceHistorySummary(@Valid @RequestBody ServiceHistoryFilterDto filter) {
-        List<ServiceHistorySummaryDto> summary = orderService.getServiceHistorySummary(filter);
+    public ResponseEntity<?> getServiceHistorySummary(@Valid @RequestBody ServiceHistoryFilterDto filter) {
+        Page<OrderSummaryDTO> summary = orderService.getServiceHistorySummary(filter,   Pageable.ofSize(10));
         return ResponseEntity.ok(summary);
     }
 
     // تاریخچه خدمات انجام شده - اطلاعات کامل یک سفارش
-    @GetMapping("/service-history/detail/{orderId}")
+    @GetMapping("/service-history/{orderId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ServiceHistoryDetailDto> getServiceHistoryDetail(@PathVariable Long orderId) {
         ServiceHistoryDetailDto detail = orderService.getServiceHistoryDetail(orderId);

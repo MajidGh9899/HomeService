@@ -60,15 +60,11 @@ public class CustomerServiceImpl implements CustomerService {
     }
     @Transactional
     public Customer register(Customer customer) throws MessagingException {
-        if (customer.getEmail() == null || !customer.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
+
         if (customerRepository.findByEmail(customer.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email already exists");
         }
-        if (customer.getPassword() == null || customer.getPassword().length() < 6) {
-            throw new IllegalArgumentException("Password must be at least 6 characters");
-        }
+
 
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         customer.setRoles(Set.of(Role.CUSTOMER));

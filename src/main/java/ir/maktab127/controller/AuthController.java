@@ -4,8 +4,9 @@ package ir.maktab127.controller;
 import ir.maktab127.dto.*;
 import ir.maktab127.entity.user.Customer;
 import ir.maktab127.entity.user.Specialist;
+import ir.maktab127.entity.user.User;
 import ir.maktab127.repository.CustomerRepository;
-import ir.maktab127.security.CustomUserDetails;
+
 import ir.maktab127.security.JwtTokenUtil;
 import ir.maktab127.service.AdminService;
 import ir.maktab127.service.CustomerService;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+
 
 public class AuthController {
 
@@ -47,22 +48,24 @@ public class AuthController {
 
     @Autowired
     private CustomerService  customerService;
-    @Autowired
-    private CustomerRepository customerRepository;
+
 
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequest) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
-            );
+            var token=new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
+            Authentication authentication = authenticationManager.authenticate(token);
+//provider
 
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            String token = jwtTokenUtil.generateToken(userDetails.getUsername());
+            User userDetails = (User) authentication.getPrincipal();
+            System.out.println(userDetails.getUsername());
+            String jwtToken = jwtTokenUtil.generateToken(userDetails);
+            System.out.println(jwtToken);
+            //Long expiresIn = jwtTokenUtil.getExpirationTime(jwtToken);
 
             LoginResponseDto response = new LoginResponseDto();
-            response.setToken(token);
+            response.setToken(jwtToken);
             response.setEmail(userDetails.getUsername());
             response.setRoles(userDetails.getAuthorities().stream()
                     .map(authority -> authority.getAuthority().replace("ROLE_", ""))
@@ -120,38 +123,4 @@ public class AuthController {
     }
 
 
-//    @PostMapping("/register/customer")
-//    public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest registerRequest) {
-//        if (adminRepository.findByEmail(registerRequest.getEmail()).isPresent() ||
-//                specialistRepository.findByEmail(registerRequest.getEmail()).isPresent() ||
-//                customerRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-//            return ResponseEntity.badRequest().body("Email already exists");
-//        }
-//
-
-
-//
-//    @PostMapping("/register/specialist")
-//    public ResponseEntity<?> registerSpecialist(@RequestBody RegisterRequest registerRequest) {
-//        if (adminRepository.findByEmail(registerRequest.getEmail()).isPresent() ||
-//                specialistRepository.findByEmail(registerRequest.getEmail()).isPresent() ||
-//                customerRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-//            return ResponseEntity.badRequest().body("Email already exists");
-//        }
-//
-//        Specialist specialist = new Specialist();
-//        specialist.setFirstName(registerRequest.getFirstName());
-//        specialist.setLastName(registerRequest.getLastName());
-//        specialist.setEmail(registerRequest.getEmail());
-//        specialist.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-//        specialist.setRegisterDate(LocalDateTime.now());
-//
-//        Set<Role> roles = new HashSet<>();
-//        roles.add(Role.EXPERT);
-//        specialist.setRoles(roles);
-//
-//        specialistRepository.save(specialist);
-//
-//        return ResponseEntity.ok("Specialist registered successfully");
-//    }
 }

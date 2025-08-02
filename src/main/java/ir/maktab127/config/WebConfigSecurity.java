@@ -2,7 +2,7 @@ package ir.maktab127.config;
 
 
 import ir.maktab127.security.CustomUserDetailsService;
-import ir.maktab127.security.JwtAuthenticationFilter;
+import ir.maktab127.security.JwtAuthorizationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -27,10 +27,10 @@ public class WebConfigSecurity {
     private final CustomUserDetailsService userDetailsService;
 
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthorizationFilter jwtAuthenticationFilter;
 
     private final AuthEntryPointJwt unauthorizedHandler;
-    public WebConfigSecurity(CustomUserDetailsService userDetailsService, JwtAuthenticationFilter jwtAuthenticationFilter, AuthEntryPointJwt unauthorizedHandler) {
+    public WebConfigSecurity(CustomUserDetailsService userDetailsService, JwtAuthorizationFilter jwtAuthenticationFilter, AuthEntryPointJwt unauthorizedHandler) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.unauthorizedHandler = unauthorizedHandler;
@@ -44,8 +44,8 @@ public class WebConfigSecurity {
         };
     }
     @Bean
-    public JwtAuthenticationFilter authenticationJwtTokenFilter() {
-        return new JwtAuthenticationFilter();
+    public JwtAuthorizationFilter authenticationJwtTokenFilter() {
+        return new JwtAuthorizationFilter();
     }
     @Bean
     public AuthenticationManager authenticationManager(
@@ -59,6 +59,7 @@ public class WebConfigSecurity {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -67,6 +68,7 @@ public class WebConfigSecurity {
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
 
 
 
@@ -76,7 +78,7 @@ public class WebConfigSecurity {
                         .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/orders/**").hasAnyRole( "SPECIALIST", "CUSTOMER")
                         .requestMatchers("/api/wallet/**").hasAnyRole("ADMIN", "SPECIALIST", "CUSTOMER")
-                        .requestMatchers("/api/payment/**").hasAnyRole(  "CUSTOMER")
+                        .requestMatchers("/pay/**").hasAnyRole(  "CUSTOMER")
 
                         .anyRequest().authenticated()
                 );

@@ -4,12 +4,15 @@ import java.util.List;
 import java.util.Optional;
 
 import ir.maktab127.dto.OrderRegisterDto;
+import ir.maktab127.dto.OrderResponseDto;
 import ir.maktab127.dto.ServiceHistoryDetailDto;
 import ir.maktab127.dto.ServiceHistoryFilterDto;
-import ir.maktab127.dto.ServiceHistorySummaryDto;
+import ir.maktab127.dto.order.OrderSummaryDTO;
 import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface OrderService {
     Order save(Order order);
@@ -30,9 +33,9 @@ public interface OrderService {
     void payOrder(Long orderId, PaymentRequestDto paymentRequest);
 
     //phase4
-    List<ServiceHistorySummaryDto> getServiceHistorySummary(ServiceHistoryFilterDto filter);
+    Page<OrderSummaryDTO> getServiceHistorySummary(ServiceHistoryFilterDto filter, Pageable pageable);
     ServiceHistoryDetailDto getServiceHistoryDetail(Long orderId);
 
-    List<Order> getOrderHistory(long customerId);
-    List<Order> getOrderHistoryByStatus(long customerId, OrderStatus status);
+    Page<OrderResponseDto> getOrderHistory(String email, Pageable pageable);
+    Page<OrderResponseDto> getOrderHistoryByStatus(String email, OrderStatus status, Pageable pageable);
 }

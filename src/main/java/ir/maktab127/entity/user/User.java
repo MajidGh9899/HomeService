@@ -6,9 +6,15 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -18,7 +24,7 @@ import java.util.Set;
 @NoArgsConstructor
 @DiscriminatorColumn(name = "user_type")
 @Table(name = User.table)
-public  class User extends BaseEntity<Long> {
+public  class User extends BaseEntity<Long> implements UserDetails {
     public static final String table = "users";
     public static final String first_names= "first_name";
     public static final String last_names= "last_name";
@@ -45,5 +51,28 @@ public  class User extends BaseEntity<Long> {
     private Set<Role> roles;
 
 
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return this.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .collect(Collectors.toSet());
+    }
 
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
+
+    @Override
+    public boolean isAccountNonExpired() { return true; }
+
+    @Override
+    public boolean isAccountNonLocked() { return true; }
+
+    @Override
+    public boolean isCredentialsNonExpired() { return true; }
+
+    @Override
+    public boolean isEnabled() { return true; }
 }

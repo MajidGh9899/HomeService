@@ -2,6 +2,7 @@ package ir.maktab127.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import ir.maktab127.entity.user.User;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,13 +30,15 @@ public class JwtTokenUtil {
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
     // Generate JWT token
-    public String generateToken(String username) {
+    public String generateToken(User user) {
         return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+                .subject(user.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .claims(Map.of("authorities", user.getAuthorities()))
+                .signWith(key,SignatureAlgorithm.HS256)
+                .compact()
+                ;
     }
     // Get username from JWT token
     public String getUsernameFromToken(String token) {

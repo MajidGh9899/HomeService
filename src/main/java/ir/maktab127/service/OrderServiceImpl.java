@@ -1,6 +1,7 @@
 package ir.maktab127.service;
 
 import ir.maktab127.dto.*;
+import ir.maktab127.dto.order.OrderSummaryDTO;
 import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.*;
 import ir.maktab127.entity.user.AccountStatus;
@@ -9,9 +10,13 @@ import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.exception.OrderException;
 import ir.maktab127.exception.WalletException;
 import ir.maktab127.repository.*;
+import ir.maktab127.repository.specification.OrderSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -232,49 +237,42 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<ServiceHistorySummaryDto> getServiceHistorySummary(ServiceHistoryFilterDto filter) {
+    public Page<OrderSummaryDTO> getServiceHistorySummary(ServiceHistoryFilterDto filter, Pageable pageable) {
+        LocalDateTime startDate = filter.getStartDate();
+        LocalDateTime endDate = filter.getEndDate();
+        OrderStatus status = filter.getOrderStatus();
+        Long serviceCategoryId = filter.getServiceCategoryId();
+        Long customerId=null;
+        Long specialistId=null;
+        if(filter.getUserType().equals("CUSTOMER"))
+             customerId = filter.getUserId();
+        if(filter.getUserType().equals("SPECIALIST"))
+             specialistId = filter.getUserId();
 
-        Long customerId = null;
-        Long specialistId = null;
 
-        if ("CUSTOMER".equals(filter.getUserType()) && filter.getUserId() != null) {
-            customerId = filter.getUserId();
-        } else if ("SPECIALIST".equals(filter.getUserType()) && filter.getUserId() != null) {
-            specialistId = filter.getUserId();
-        }
+        Specification<Order> spec =    Specification.not(null);
 
-        List<Order> orders = orderRepository.findOrdersWithFilters(
-                filter.getStartDate(),
-                filter.getEndDate(),
-                filter.getOrderStatus(),
-                filter.getServiceCategoryId(),
-                customerId,
-                specialistId
-        );
+        if (startDate != null)
+            spec = spec.and(OrderSpecification.hasStartDate(startDate));
 
-        return orders.stream().map(order -> {
+        if (endDate != null)
+            spec = spec.and(OrderSpecification.hasEndDate(endDate));
 
-            String specialistName = "";
-            if (order.getStatus() != OrderStatus.WAITING_FOR_PROPOSAL) {
-                Optional<Proposal> acceptedProposal = proposalRepository.findByOrderIdAndStatus(order.getId(), ProposalStatus.ACCEPTED);
-                if (acceptedProposal.isPresent()) {
-                    specialistName = acceptedProposal.get().getSpecialist().getFirstName() + " " +
-                            acceptedProposal.get().getSpecialist().getLastName();
-                }
-            }
+        if (status != null)
+            spec = spec.and(OrderSpecification.hasStatus(status));
 
-            return new ServiceHistorySummaryDto(
-                    order.getId(),
-                    order.getCustomer().getFirstName() + " " + order.getCustomer().getLastName(),
-                    specialistName,
-                    order.getService().getName(),
-                    order.getProposedPrice(),
-                    order.getStatus(),
-                    order.getStartDate(),
-                    order.getCreateDate(),
-                    order.getAddress()
-            );
-        }).collect(Collectors.toList());
+        if (serviceCategoryId != null)
+            spec = spec.and(OrderSpecification.hasServiceCategoryId(serviceCategoryId));
+
+        if (customerId != null)
+            spec = spec.and(OrderSpecification.hasCustomerId(customerId));
+
+        if (specialistId != null)
+            spec = spec.and(OrderSpecification.hasAcceptedProposalBySpecialist(specialistId));
+
+        Page<Order> orders = orderRepository.findAll(spec, pageable);
+
+        return   orders.map(OrderMapper::toSummaryDto);
     }
 
     @Override
@@ -330,17 +328,20 @@ public class OrderServiceImpl implements OrderService {
     }
     @Override
     @Transactional
-    public List<Order> getOrderHistory(long customerId) {
-        Customer customer = customerRepository.findById(customerId)
+    public Page<OrderResponseDto> getOrderHistory(String email, Pageable Page) {
+        Customer customer = customerRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
-        return orderRepository.findByCustomer(customer);
+        Page<Order> order = orderRepository.findByCustomer(customer,Page);
+        return order.map(OrderMapper::toResponseDto);
     }
     @Override
     @Transactional
-    public List<Order> getOrderHistoryByStatus(long customerId, OrderStatus status) {
-        Customer customer = customerRepository.findById(customerId)
+    public Page<OrderResponseDto> getOrderHistoryByStatus(String Email, OrderStatus status, Pageable pageable) {
+        Customer customer = customerRepository.findByEmail(Email)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
-        return orderRepository.findByCustomerAndStatus(customer, status);
+
+          Page<Order> order = orderRepository.findByCustomerAndStatus( customer, status, pageable);
+          return order.map(OrderMapper::toResponseDto);
     }
 
 }
