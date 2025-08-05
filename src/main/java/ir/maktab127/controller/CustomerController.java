@@ -34,6 +34,7 @@ import static org.springframework.security.authorization.AuthorityReactiveAuthor
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final SpecialistService specialistService;
     private final ServiceCategoryService serviceCategoryService;
     private final OrderService orderService;
     private final CommentService commentService;
@@ -125,37 +126,30 @@ public class CustomerController {
     }
 
     // انتخاب متخصص برای سفارش
-    @PostMapping("/orders/{orderId}/select-proposal/{proposalId}")
+    @PostMapping("/orders/{orderId}/select-proposal/{proposalId}/{specialistId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponseDto> selectProposal(
 
             @PathVariable Long orderId,
-            @PathVariable Long proposalId) {
+            @PathVariable Long proposalId,
+            @PathVariable Long specialistId) {
         String email=SecurityContextHolder.getContext().getAuthentication().getName();
         Customer customer=customerService.findByEmail(email).orElseThrow();
         Optional<Order> orderOpt = orderService.findById(orderId);
         Optional<Proposal> proposalOpt = proposalService.findById(proposalId);
-        if (orderOpt.isEmpty() || proposalOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+
         Order order = orderOpt.get();
         Proposal proposal = proposalOpt.get();
-        if (!order.getCustomer().getId().equals(customer.getId()) || !proposal.getOrder().getId().equals(orderId)) {
-            return ResponseEntity.badRequest().build();
-        }
+
+        Specialist spec=specialistService.findById(specialistId).orElseThrow();
+        order.setSpecialist(spec);
         // تغییر وضعیت سفارش
         order.setStatus(OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL);
         orderService.save(order);
         // تغییر وضعیت پیشنهاد انتخاب‌شده
-        proposal.setStatus(ProposalStatus.ACCEPTED);
-        proposalService.save(proposal);
-        // رد سایر پیشنهادها
-        proposalService.getProposalsByOrder(orderId).stream()
-                .filter(p -> !p.getId().equals(proposalId))
-                .forEach(p -> {
-                    p.setStatus(ProposalStatus.REJECTED);
-                    proposalService.save(p);
-                });
+
+        proposalService.updateProposalStatus(proposalId, ProposalStatus.ACCEPTED);
+
         return ResponseEntity.ok(new ApiResponseDto("Proposal"+proposalId+" selected successfully",true));
     }
 
@@ -191,7 +185,7 @@ public class CustomerController {
     }
 
 
-    @PostMapping("/orders/{orderId}/complete")
+    @PutMapping("/orders/{orderId}/complete")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponseDto> completeOrder(
             @PathVariable Long orderId) {
@@ -248,10 +242,10 @@ public class CustomerController {
     }
     @GetMapping("/balance")
   @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<java.math.BigDecimal> getBalance( ) {
+    public ResponseEntity<ApiResponseDto> getBalance( ) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Customer  customer = customerService.findByEmail( email).orElseThrow();
-        return ResponseEntity.ok(walletService.getBalanceByUserId(customer.getId()));
+        return ResponseEntity.ok(new ApiResponseDto("balance: "+walletService.getBalanceByUserId(customer.getId()),true));
     }
     //provider
     @GetMapping("/orders")

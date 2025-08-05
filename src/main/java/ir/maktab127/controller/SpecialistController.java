@@ -243,10 +243,10 @@ public class SpecialistController {
     //کیف پول
     @GetMapping("/balance")
     @PreAuthorize("hasRole('SPECIALIST')")
-    public ResponseEntity<java.math.BigDecimal> getBalance() {
+    public ResponseEntity<ApiResponseDto> getBalance() {
         String email=SecurityContextHolder.getContext().getAuthentication().getName();
         Specialist specialist= specialistService.findByEmail(email).orElseThrow();
-        return ResponseEntity.ok(walletService.getBalanceByUserId(specialist.getId()));
+        return ResponseEntity.ok(new ApiResponseDto("ballence :"+walletService.getBalanceByUserId(specialist.getId()),true));
     }
 
     // مشاهده تاریخچه تراکنش‌های کیف پول متخصص

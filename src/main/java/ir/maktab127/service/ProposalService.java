@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProposalService {
+
     Proposal save(Proposal proposal);
     Optional<Proposal> findById(Long id);
     List<Proposal> getAll();
