@@ -11,6 +11,8 @@ import ir.maktab127.repository.ProposalRepository;
 import ir.maktab127.repository.SpecialistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ public class ProposalServiceImpl implements ProposalService {
 
 
     @Override
+    @Transactional
     public Proposal save(Proposal proposal) {
 
         return proposalRepository.save(proposal);
@@ -62,26 +65,37 @@ public class ProposalServiceImpl implements ProposalService {
         boolean allowed = specialist.getServiceCategories().stream()
                 .anyMatch(sc -> sc.getId().equals(order.getService().getId()));//query
         if (!allowed) throw new IllegalStateException("Specialist not allowed for this order's service");
+        if(dto.getEndDate().isBefore(dto.getStartDate()) ||dto.getStartDate().isBefore(order.getStartDate())
+        ||dto.getEndDate().isBefore(order.getStartDate())){
+            throw new IllegalStateException("Invalid start and end date");
+        }
 
         Proposal proposal = new Proposal();
         proposal.setSpecialist(specialist);
         proposal.setOrder(order);
         proposal.setProposedPrice(dto.getProposedPrice());
-        proposal.setProposedStartTime(LocalDateTime.parse(dto.getStartDate()  + "T00:00:00"));
-        proposal.setEndDate(LocalDateTime.parse(dto.getEndDate() + "T00:00:00"));
+        proposal.setProposedStartTime(dto.getStartDate() );
+        proposal.setEndDate(dto.getEndDate() );
         proposal.setCreateDate(LocalDateTime.now());
+        proposal.setStatus(ProposalStatus.PENDING);
         return proposalRepository.save(proposal);
     }
 
     //
+
     @Override
-    public List<Proposal> getProposalsByOrder(Long orderId) {
-        return proposalRepository.findByOrderId(orderId);
+    public Page<Proposal> getProposalsByOrder(Long orderId, Pageable pageable) {
+        return proposalRepository.findByOrderId(orderId,pageable);
     }
 
     @Override
-    public List<Proposal> getProposalsBySpecialist(Long specialistId) {
-        return proposalRepository.findBySpecialistId(specialistId);
+    public List<Proposal> getProposalsByOrder(Long orderId) {
+        return  proposalRepository.findByOrderId(orderId);
+    }
+
+    @Override
+    public Page<Proposal> getProposalsBySpecialist(Long specialistId, Pageable pageable) {
+        return proposalRepository.findBySpecialistId(specialistId,pageable);
     }
 
     @Override

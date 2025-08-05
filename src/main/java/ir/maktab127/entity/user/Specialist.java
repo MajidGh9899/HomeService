@@ -3,6 +3,7 @@ package ir.maktab127.entity.user;
 import ir.maktab127.entity.Comment;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.ServiceCategory;
+import ir.maktab127.entity.Wallet;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,6 +37,9 @@ public class Specialist  extends User {
 
     @OneToMany(mappedBy = "specialist")
     private List<Comment> comments = new ArrayList<>();
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Wallet wallet;
+
     @Column
     private String emailVerificationToken;
     @Column(nullable = false)

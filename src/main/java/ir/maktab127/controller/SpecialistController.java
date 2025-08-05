@@ -11,8 +11,14 @@ import ir.maktab127.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,53 +52,61 @@ public class SpecialistController {
     }
 
     @GetMapping
-    public List<SpecialistResponseDto> getAll() {
-        return specialistService.getAll().stream()
-                .map(SpecialistMapper::toResponseDto)
-                .collect(Collectors.toList());
+    @PreAuthorize(  "hasRole('ADMIN')")
+    public Page<SpecialistResponseDto> getAll(@RequestParam(defaultValue = "1") int page,
+                                              @RequestParam(defaultValue = "1") int size,
+                                              @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        return  specialistService.getAll(pageable).map( SpecialistMapper::toResponseDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         specialistService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
     //
-    @PostMapping("/login")
-    public ResponseEntity<SpecialistResponseDto> login(@Valid @RequestBody SpecialistLoginDto dto) {
-        Optional<Specialist> specialist = specialistService.login(dto.getEmail(), dto.getPassword());
-        return specialist
-                .map(SpecialistMapper::toResponseDto)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(401).build());
-    }
-    //
-    @PutMapping("/{id}/update-info")
-    public ResponseEntity<Void> updateInfo(@PathVariable Long id, @Valid @RequestBody SpecialistUpdateDto dto) {
+    @PutMapping("/update-info")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<Void> updateInfo( @Valid @RequestBody SpecialistUpdateDto dto) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
         try {
-            specialistService.updateInfo(id, dto);
+            specialistService.updateInfo(specialist.getId(), dto);
             return ResponseEntity.ok().build();
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(null); // Conflict
         }
     }
     @PostMapping(value = "/update-profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SPECIALIST')")
     public ResponseEntity<?> updateProfileImage(
-            @RequestParam Long specialistId,
             @RequestPart("profileImage") MultipartFile profileImage) throws IOException {
-        // اعتبارسنجی و ذخیره تصویر
+
+
+        Specialist specialist = (Specialist) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
 
         if (profileImage != null && !profileImage.isEmpty()) {
+            if (profileImage.getSize() > 300*1024) {
+                return ResponseEntity.badRequest().body("Max image size is 300 KB");
+            }
             String base64Image = Base64.getEncoder().encodeToString(profileImage.getBytes());
 
 
-            specialistService.updateProfileImage(specialistId, base64Image);
+            specialistService.updateProfileImage(specialist.getId(), base64Image);
         }
         return ResponseEntity.ok("Profile image updated");
     }
     //offer to do a service
     @PostMapping("/addProposal")
+    @PreAuthorize("hasRole('SPECIALIST')")
     public ResponseEntity<ProposalResponseDto> registerProposal(@Valid @RequestBody ProposalRegisterDto dto) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+        dto.setSpecialistId(specialist.getId());
         try {
             Proposal proposal = proposalService.registerProposal(dto);
             return ResponseEntity.ok(ProposalMapper.toResponseDto(proposal));
@@ -103,9 +117,15 @@ public class SpecialistController {
     //  completed
     //phase2
     // Get Available Orders for Specialist
-    @GetMapping("/{specialistId}/available-orders")
-    public ResponseEntity<List<Order>> getAvailableOrders(@PathVariable Long specialistId) {
-        List<Order> availableOrders = specialistService.getAvailableOrdersForSpecialist(specialistId);
+    @GetMapping("/available-orders")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<Page<Order>> getAvailableOrders(@RequestParam(defaultValue = "1") int page,
+                                                          @RequestParam(defaultValue = "1") int size,
+                                                          @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+        Page<Order> availableOrders = specialistService.getAvailableOrdersForSpecialist(specialist.getId(),pageable);
         return ResponseEntity.ok(availableOrders);
     }
 
@@ -142,17 +162,22 @@ public class SpecialistController {
     }
 
     // Get Specialist's Proposals
-    @GetMapping("/{specialistId}/proposals")
-    public ResponseEntity<List<ProposalResponseDto>> getSpecialistProposals(@PathVariable Long specialistId) {
-        List<Proposal> proposals = specialistService.getSpecialistProposals(specialistId);
-        List<ProposalResponseDto> responseDtos = proposals.stream()
-                .map(ProposalMapper::toResponseDto)
-                .collect(Collectors.toList());
+    @GetMapping("/proposals")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<Page<ProposalResponseDto>> getSpecialistProposals(@RequestParam(defaultValue = "1") int page,
+                                                                            @RequestParam(defaultValue = "1") int size,
+                                                                            @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+        Page<Proposal> proposals = specialistService.getSpecialistProposals(specialist.getId(), pageable);
+        Page<ProposalResponseDto> responseDtos = proposals.map(ProposalMapper::toResponseDto);
         return ResponseEntity.ok(responseDtos);
     }
 
     // Get Proposal by ID
     @GetMapping("/proposals/{proposalId}")
+    @PreAuthorize("hasRole('SPECIALIST')")
     public ResponseEntity<ProposalResponseDto> getProposalById(@PathVariable Long proposalId) {
         Optional<Proposal> proposal = proposalService.findById(proposalId);
         return proposal.map(p -> ResponseEntity.ok(ProposalMapper.toResponseDto(p)))
@@ -175,41 +200,66 @@ public class SpecialistController {
         }
     }
     // phse 3 history
-    @GetMapping("/{specialistId}/orders/history")
-    public ResponseEntity<List<OrderResponseDto>> getOrderHistory(@PathVariable Long specialistId) {
-        List<OrderResponseDto> history = proposalService.getProposalsBySpecialist(specialistId)
-                .stream()
+    @GetMapping("/orders/history")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<Page<OrderResponseDto>> getOrderHistory(@RequestParam(defaultValue = "1") int page,
+                                                                  @RequestParam(defaultValue = "1") int size,
+                                                                  @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+        Page<Proposal> proposals = proposalService.getProposalsBySpecialist(specialist.getId(), pageable);
+        List<OrderResponseDto> dtos = proposals.getContent().stream()
+                .map(Proposal::getOrder) // از Proposal به Order
                 .map(OrderMapper::toResponseDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(history);
+                .toList();
+        Page<OrderResponseDto> ordersDto=new PageImpl<>(dtos,pageable,dtos.size());
+        return ResponseEntity.ok(ordersDto);
     }
 
     //comment and averge rating
-    @GetMapping("/{specialistId}/rating/average")
-    public ResponseEntity<Double> getAverageRating(@PathVariable Long specialistId) {
-        Double avg = commentService.getAverageRatingForSpecialist(specialistId);
-        return ResponseEntity.ok(avg);
+    @GetMapping("/rating/average")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<ApiResponseDto> getAverageRating(
+    ) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+
+
+        Double avg = commentService.getAverageRatingForSpecialist(specialist.getId());
+        return ResponseEntity.ok(new ApiResponseDto("Your rating is: "+avg,true));
     }
 
     // مشاهده امتیاز سفارش خاص
-    @GetMapping("/orders/rating/{specialistId}/{orderId}")
-    public ResponseEntity<Integer> getOrderRating(@PathVariable Long specialistId, @PathVariable Long orderId) {
-        Integer rating = commentService.getOrderRatingForSpecialist(specialistId, orderId);
-        return ResponseEntity.ok(rating);
+    @GetMapping("/orders/rating/{orderId}")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<ApiResponseDto> getOrderRating( @PathVariable Long orderId) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+        Integer rating = commentService.getOrderRatingForSpecialist(specialist.getId(), orderId);
+        return ResponseEntity.ok(new ApiResponseDto("your rating is :"+rating.toString(),true));
     }
 
     //کیف پول
-    @GetMapping("/{specialistId}/balance")
-    public ResponseEntity<java.math.BigDecimal> getBalance(@PathVariable Long specialistId) {
-        return ResponseEntity.ok(walletService.getBalanceByUserId(specialistId));
+    @GetMapping("/balance")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<java.math.BigDecimal> getBalance() {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+        return ResponseEntity.ok(walletService.getBalanceByUserId(specialist.getId()));
     }
 
     // مشاهده تاریخچه تراکنش‌های کیف پول متخصص
-    @GetMapping("/{specialistId}/transactions")
-    public ResponseEntity<List<WalletTransactionDto>> getTransactions(@PathVariable Long specialistId) {
-        var txs = walletService.getTransactionsByUserId(specialistId)
-                .stream().map(WalletTransactionMapper::toDto)
-                .collect(java.util.stream.Collectors.toList());
+    @GetMapping("/transactions")
+    @PreAuthorize("hasRole('SPECIALIST')")
+    public ResponseEntity<Page<WalletTransactionDto>> getTransactions(@RequestParam(defaultValue = "1") int page,
+                                                                      @RequestParam(defaultValue = "1") int size,
+                                                                      @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Specialist specialist= specialistService.findByEmail(email).orElseThrow();
+        Page<WalletTransactionDto> txs = walletService.getTransactionsByUserId(specialist.getId(),pageable).map(  WalletTransactionMapper::toDto);
+
         return ResponseEntity.ok(txs);
     }
 

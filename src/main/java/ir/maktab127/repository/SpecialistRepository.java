@@ -1,19 +1,25 @@
 package ir.maktab127.repository;
 
+import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Specialist;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 import java.util.List;
 import java.util.Optional;
 
-public interface SpecialistRepository extends JpaRepository<Specialist, Long> {
+public interface SpecialistRepository extends JpaRepository<Specialist, Long> , JpaSpecificationExecutor< Specialist> {
 
     Optional<Specialist> findByEmail(String email);
+
+
+    Page<Specialist> findByStatus(AccountStatus status, Pageable pageable);
 
 
     @Query("SELECT s FROM Specialist s " +

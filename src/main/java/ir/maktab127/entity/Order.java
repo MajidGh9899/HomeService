@@ -54,7 +54,7 @@ public class Order extends BaseEntity<Long> {
     @Column(name = status_order, nullable = false)
     private OrderStatus status;
 
-    @OneToOne(optional = true)
+    @ManyToOne(optional = true)
     @JoinColumn(name = specialists)
     private Specialist  specialist;
 }

@@ -2,6 +2,8 @@ package ir.maktab127.service;
 
 import ir.maktab127.entity.Wallet;
 import ir.maktab127.entity.WalletTransaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,7 +21,7 @@ public interface WalletService {
     //phase 3
     BigDecimal getBalanceByUserId(Long userId);
 
-    List<WalletTransaction> getTransactionsByUserId(Long userId);
+    Page<WalletTransaction> getTransactionsByUserId(Long userId, Pageable page);
     boolean processPayment(String token);
     String createPaymentRequest(Long customerId, BigDecimal amount);
     boolean isValidPaymentToken(String token);

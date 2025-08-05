@@ -11,6 +11,7 @@ import ir.maktab127.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 @Service
@@ -46,16 +47,16 @@ public class CommentServiceImpl implements CommentService {
             throw new IllegalArgumentException("Invalid customer or specialist for this order");
 
         Customer customer = customerRepository.findById(dto.getCustomerId())
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
-        Specialist specialist = specialistRepository.findById(dto.getSpecialistId())
-                .orElseThrow(() -> new IllegalArgumentException("Specialist not found"));
+                .orElseThrow( );
+        Specialist specialist = order.getSpecialist();
 
-        Comment comment = new Comment(5L);
+
+        Comment comment = new Comment();
         comment.setCustomer(customer);
         comment.setSpecialist(specialist);
         comment.setRating(dto.getRating());
         comment.setText(dto.getText());
-        comment.setCreatedAt(java.time.LocalDateTime.now());
+        comment.setCreatedAt(LocalDateTime.now());
         return commentRepository.save(comment);
     }
     @Override

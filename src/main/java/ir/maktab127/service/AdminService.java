@@ -14,12 +14,12 @@ public interface AdminService {
     Admin save(Admin admin);
     Optional<Admin> findById(Long id);
     Optional<Admin> findByEmail(String email);
-    List<Admin> getAll();
+    Page<Admin> getAll( Pageable page);
     void delete(Long id);
 
 
     void approveSpecialist(Long specialistId);
-    List<Specialist> getPendingSpecialists();
+    Page<Specialist> getPendingSpecialists(Pageable page);
     void addSpecialistToServiceCategory(Long specialistId, Long serviceCategoryId);
     void removeSpecialistFromServiceCategory(Long specialistId, Long serviceCategoryId);
 

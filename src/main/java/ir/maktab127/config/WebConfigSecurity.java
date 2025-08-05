@@ -30,9 +30,9 @@ public class WebConfigSecurity {
     private final JwtAuthorizationFilter jwtAuthenticationFilter;
 
     private final AuthEntryPointJwt unauthorizedHandler;
-    public WebConfigSecurity(CustomUserDetailsService userDetailsService, JwtAuthorizationFilter jwtAuthenticationFilter, AuthEntryPointJwt unauthorizedHandler) {
+    public WebConfigSecurity(CustomUserDetailsService userDetailsService, JwtAuthorizationFilter jwtAuthorizationFilter, AuthEntryPointJwt unauthorizedHandler) {
         this.userDetailsService = userDetailsService;
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtAuthenticationFilter = jwtAuthorizationFilter;
         this.unauthorizedHandler = unauthorizedHandler;
     }
 
@@ -78,7 +78,7 @@ public class WebConfigSecurity {
                         .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/orders/**").hasAnyRole( "SPECIALIST", "CUSTOMER")
                         .requestMatchers("/api/wallet/**").hasAnyRole("ADMIN", "SPECIALIST", "CUSTOMER")
-                        .requestMatchers("/pay/**").hasAnyRole(  "CUSTOMER")
+                        .requestMatchers("/pay/**").hasRole(  "CUSTOMER")
 
                         .anyRequest().authenticated()
                 );

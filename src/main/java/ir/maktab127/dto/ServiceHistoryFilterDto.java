@@ -1,6 +1,7 @@
 package ir.maktab127.dto;
 
 import ir.maktab127.entity.OrderStatus;
+import jakarta.validation.constraints.Past;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ServiceHistoryFilterDto {
+    @Past
     private LocalDateTime startDate;
+    @Past
     private LocalDateTime endDate;
     private OrderStatus orderStatus;
     private Long serviceCategoryId;

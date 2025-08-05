@@ -22,7 +22,7 @@ public interface OrderService {
 
     void completedOrder(Long orderId);
 
-    void payToSpecialist(Long orderId, Long specialistId);
+
     Order registerOrder(OrderRegisterDto dto);
 
     //

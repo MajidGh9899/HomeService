@@ -1,17 +1,19 @@
 package ir.maktab127.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 public class OrderRegisterDto {
-    @NotNull
+
     private Long customerId;
     @NotNull
     private Long serviceCategoryId;
@@ -23,5 +25,6 @@ public class OrderRegisterDto {
     @NotBlank
     private String address;
     @NotNull
-    private String startDate;
+    @Future
+    private LocalDateTime startDate;
 }

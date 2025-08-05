@@ -10,15 +10,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SpecialistUpdateDto {
-    @Email
-    @NotBlank
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
-            message = "Invalid email format")
-    private String email;
+
 
     @NotBlank
     @Size(min = 8)
-
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
             message = "Password must be at least 8 characters, include uppercase, lowercase, digit, and special character")
     private String password;

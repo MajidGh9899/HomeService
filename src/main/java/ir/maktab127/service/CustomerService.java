@@ -14,7 +14,7 @@ public interface CustomerService {
     List<Customer> getAll();
     void delete(Long id);
     Optional<Customer> login(String email, String password);
-    void updateInfo(Long customerId, CustomerUpdateDto dto);
+    void updateInfo(String email, CustomerUpdateDto dto);
 
     void verifyEmail(String token) throws IllegalStateException;
     Customer register(Customer customer) throws MessagingException;

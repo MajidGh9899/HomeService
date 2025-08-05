@@ -8,15 +8,18 @@ import ir.maktab127.dto.order.OrderSummaryDTO;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.ServiceCategory;
 import ir.maktab127.entity.user.Admin;
+import ir.maktab127.entity.user.Specialist;
 import ir.maktab127.service.AdminService;
 import ir.maktab127.service.OrderService;
 import ir.maktab127.service.ServiceCategoryService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,19 +49,22 @@ public class AdminController {
         Admin saved = adminService.save(admin);
         return ResponseEntity.ok(AdminMapper.toResponseDto(saved));
     }
-    @GetMapping("/{id}")
+    @GetMapping("/get-info")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<AdminResponseDto> getById(@PathVariable Long id) {
-        Optional<Admin> admin = adminService.findById(id);
+    public ResponseEntity<AdminResponseDto> getById() {
+        String email= SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<Admin> admin = adminService.findByEmail(email);
         return admin.map(a -> ResponseEntity.ok(AdminMapper.toResponseDto(a)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    @GetMapping
+    @GetMapping("/get-all-admins")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<AdminResponseDto> getAll() {
-        return adminService.getAll().stream()
-                .map(AdminMapper::toResponseDto)
-                .collect(Collectors.toList());
+    public Page<AdminResponseDto> getAll(@RequestParam(defaultValue = "0") int page,
+                                         @RequestParam(defaultValue = "10") int size,
+                                         @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Admin> admins = adminService.getAll( pageable);
+        return  admins.map(AdminMapper::toResponseDto);
     }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -74,14 +80,18 @@ public class AdminController {
     }
     @GetMapping("/pending-specialists")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<SpecialistResponseDto> getPendingSpecialists() {
-        return adminService.getPendingSpecialists().stream()
-                .map(SpecialistMapper::toResponseDto)
-                .collect(java.util.stream.Collectors.toList());
+    public Page<SpecialistResponseDto> getPendingSpecialists(@RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "10") int size,
+                                                             @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Specialist> pendingList = adminService.getPendingSpecialists(pageable);
+        return pendingList.map(SpecialistMapper::toResponseDto);
+
+
     }
     //سرویس
     // افزودن خدمت جدید
-    @PostMapping("/service-categories")
+    @PostMapping("/add-service-categories")
     public ResponseEntity<ServiceCategoryResponseDto> createServiceCategory(
             @Valid @RequestBody ServiceCategoryRegisterDto dto) {
         ServiceCategory serviceCategory = ServiceCategoryMapper.toEntity(dto);
@@ -90,7 +100,7 @@ public class AdminController {
     }
 
     // ویرایش خدمت
-    @PutMapping("/service-categories/{id}")
+    @PutMapping("/edit-service-categories/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ServiceCategoryResponseDto> updateServiceCategory(
             @PathVariable Long id,
@@ -104,7 +114,7 @@ public class AdminController {
     }
 
     // حذف خدمت
-    @DeleteMapping("/service-categories/{id}")
+    @DeleteMapping("/delete-service-categories/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteServiceCategory(@PathVariable Long id) {
         serviceCategoryService.delete(id);
@@ -122,43 +132,61 @@ public class AdminController {
     }
 
     // مشاهده همه خدمات
-    @GetMapping("/service-categories")
+    @GetMapping("/all-service-categories")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ServiceCategoryResponseDto> getAllServiceCategories() {
-        return serviceCategoryService.getAll().stream()
-                .map(ServiceCategoryMapper::toResponseDto)
-                .collect(Collectors.toList());
+    public Page<ServiceCategoryResponseDto> getAllServiceCategories(@RequestParam(defaultValue = "0") int page,
+                                                                    @RequestParam(defaultValue = "10") int size,
+                                                                    @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ServiceCategory> services= serviceCategoryService.getAll(pageable);
+        return  services.map(ServiceCategoryMapper::toResponseDto);
     }
     //اضافه و حذف متخصصان از زیرخدمتهای موجود در سیستم
     @PostMapping("/service-categories/{serviceCategoryId}/specialists/{specialistId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> addSpecialistToServiceCategory(
+    public ResponseEntity<?> addSpecialistToServiceCategory(
             @PathVariable Long serviceCategoryId, @PathVariable Long specialistId) {
-        adminService.addSpecialistToServiceCategory(specialistId, serviceCategoryId);
-        return ResponseEntity.ok().build();
+        try {
+            adminService.addSpecialistToServiceCategory(specialistId, serviceCategoryId);
+            return ResponseEntity.ok(new ApiResponseDto("Specialist successfully added to service category", true));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponseDto(e.getMessage(), false));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new ApiResponseDto("An unexpected error occurred: " + e.getMessage(), false));
+        }
     }
+
 
     @DeleteMapping("/service-categories/{serviceCategoryId}/specialists/{specialistId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> removeSpecialistFromServiceCategory(
+    public ResponseEntity<ApiResponseDto> removeSpecialistFromServiceCategory(
             @PathVariable Long serviceCategoryId, @PathVariable Long specialistId) {
         adminService.removeSpecialistFromServiceCategory(specialistId, serviceCategoryId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponseDto("Specialist successfully removed his service category", true));
     }
 
     //filter phase-3
-    @PostMapping("/users/search")
+    @GetMapping("/users/search")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestBody UserSearchFilterDto filter,@RequestParam(required = false) int page) {
-        Page<UserResponseDto> users = adminService.searchUsers(filter, Pageable.ofSize(page));
-        return   ResponseEntity.ok(users.getContent());
+    public ResponseEntity<Page<UserResponseDto>> searchUsers(@RequestBody UserSearchFilterDto filter
+            ,@RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "1") int size,
+            @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        Page<UserResponseDto> users = adminService.searchUsers(filter, pageable);
+        return   ResponseEntity.ok(users);
     }
 
 
     @GetMapping("/service-history")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getServiceHistorySummary(@Valid @RequestBody ServiceHistoryFilterDto filter) {
-        Page<OrderSummaryDTO> summary = orderService.getServiceHistorySummary(filter,   Pageable.ofSize(10));
+    public ResponseEntity<Page<OrderSummaryDTO>> getServiceHistorySummary(@Valid @RequestBody ServiceHistoryFilterDto filter,@RequestParam(defaultValue = "0") int page,
+    @RequestParam(defaultValue = "1") int size,
+    @RequestParam(required = false) String sort){
+        Pageable pageable = PageRequest.of(page-1, size);
+        Page<OrderSummaryDTO> summary = orderService.getServiceHistorySummary(filter,pageable);
         return ResponseEntity.ok(summary);
     }
 

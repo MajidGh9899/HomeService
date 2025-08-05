@@ -15,7 +15,7 @@ public class ProposalRegisterDto {
     @NotNull(message = "Order ID is required")
     private Long orderId;
 
-    @NotNull(message = "Specialist ID is required")
+
     private Long specialistId;
 
     @NotNull(message = "Proposed price is required")

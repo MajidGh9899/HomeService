@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
@@ -30,6 +31,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{token}")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public String showPaymentPage(@PathVariable String token, Model model) {
         if (!walletService.isValidPaymentToken(token)) {
             throw new IllegalArgumentException("Invalid or expired token");
@@ -39,6 +41,7 @@ public class PaymentController {
     }
 
     @GetMapping(value = "/api/payment/captcha", produces = MediaType.IMAGE_PNG_VALUE)
+    @PreAuthorize("hasRole('CUSTOMER')")
     public void getCaptcha(HttpServletResponse response, HttpSession session) throws IOException {
 //        String captchaText = String.valueOf((int) (Math.random() * 900000 + 100000));
 //        session.setAttribute("captcha", captchaText);
@@ -88,6 +91,7 @@ public class PaymentController {
     }
 
     @PostMapping("/api/payment/submit")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Map<String, String>> submitPayment(
             @RequestParam String token,
             @RequestParam String cardNumber,
@@ -101,10 +105,7 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid captcha"));
         }
 
-        // اعتبارسنجی ساده اطلاعات کارت (در عمل، باید از درگاه پرداخت استفاده شود)
-        if (!cardNumber.matches("[0-9]{16}") || !cvv2.matches("[0-9]{3,4}") || !expDate.matches("[0-9]{2}/[0-9]{2}")) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid card details"));
-        }
+
 
         boolean paymentSuccess = walletService.processPayment(token);
         if (!paymentSuccess) {

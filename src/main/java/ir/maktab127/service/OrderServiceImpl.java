@@ -59,18 +59,17 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     @Override
     public void completedOrder(Long orderId) {
-        Optional<Order> order = orderRepository.findById(orderId);
+        Order order = orderRepository.findById(orderId).orElseThrow();
 
-        if (order.isPresent()  ) {
-            order.get().setStatus(OrderStatus.COMPLETED);
-            orderRepository.save(order.get());
+            order.setStatus(OrderStatus.COMPLETED);
+            orderRepository.save(order);
 
         }
 
 
-    }
-    @Override
+
     @Transactional
+    @Override
     public Order registerOrder(OrderRegisterDto dto) {
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
@@ -87,27 +86,12 @@ public class OrderServiceImpl implements OrderService {
         order.setDescription(dto.getDescription());
         order.setProposedPrice(dto.getProposedPrice());
         order.setAddress(dto.getAddress());
-        order.setStartDate(LocalDateTime.parse(dto.getStartDate()));
+        order.setStartDate(dto.getStartDate());
         order.setCreateDate(LocalDateTime.now());
         order.setStatus(OrderStatus.WAITING_FOR_PROPOSAL);
         return orderRepository.save(order);
     }
-    @Override
-    public void payToSpecialist(Long orderId, Long specialistId) {
-        Optional<Order> order = orderRepository.findById(orderId);
-        if (order.isPresent()) {
-            if (order.get().getStatus() == OrderStatus.COMPLETED) {
-                try {
-                walletService.withdrawFromCustomer(order.get().getCustomer().getId(), order.get().getProposedPrice());
 
-                } catch (RuntimeException e) {
-                    throw new RuntimeException("Not Enough Money");
-                }
-                walletService.depositToSpecialist(specialistId, order.get().getProposedPrice());
-            }
-        }
-
-    }
     //
     @Override
     @Transactional
@@ -248,8 +232,12 @@ public class OrderServiceImpl implements OrderService {
              customerId = filter.getUserId();
         if(filter.getUserType().equals("SPECIALIST"))
              specialistId = filter.getUserId();
+        Specification<Order> spec = getOrderSpecification(startDate, endDate, status, serviceCategoryId, customerId, specialistId);
+        Page<Order> orders = orderRepository.findAll(spec, pageable);
+        return   orders.map(OrderMapper::toSummaryDto);
+    }
 
-
+    private static Specification<Order> getOrderSpecification(LocalDateTime startDate, LocalDateTime endDate, OrderStatus status, Long serviceCategoryId, Long customerId, Long specialistId) {
         Specification<Order> spec =    Specification.not(null);
 
         if (startDate != null)
@@ -269,10 +257,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (specialistId != null)
             spec = spec.and(OrderSpecification.hasAcceptedProposalBySpecialist(specialistId));
-
-        Page<Order> orders = orderRepository.findAll(spec, pageable);
-
-        return   orders.map(OrderMapper::toSummaryDto);
+        return spec;
     }
 
     @Override
@@ -280,20 +265,10 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        ServiceHistoryDetailDto detailDto = new ServiceHistoryDetailDto();
-        detailDto.setOrderId(order.getId());
-        detailDto.setDescription(order.getDescription());
-        detailDto.setProposedPrice(order.getProposedPrice());
-        detailDto.setStartDate(order.getStartDate());
-        detailDto.setCreatedAt(order.getCreateDate());
-        detailDto.setAddress(order.getAddress());
-        detailDto.setStatus(order.getStatus());
+        ServiceHistoryDetailDto detailDto = getServiceHistoryDetailDto(order);
 
 
-        detailDto.setCustomerId(order.getCustomer().getId());
-        detailDto.setCustomerName(order.getCustomer().getFirstName() + " " + order.getCustomer().getLastName());
-        detailDto.setCustomerEmail(order.getCustomer().getEmail());
-
+        setcustomer(detailDto, order);
 
 
         Optional<Proposal> acceptedProposal = proposalRepository.findByOrderIdAndStatus(order.getId(), ProposalStatus.ACCEPTED);
@@ -326,6 +301,25 @@ public class OrderServiceImpl implements OrderService {
 
         return detailDto;
     }
+
+    private static void setcustomer(ServiceHistoryDetailDto detailDto, Order order) {
+        detailDto.setCustomerId(order.getCustomer().getId());
+        detailDto.setCustomerName(order.getCustomer().getFirstName() + " " + order.getCustomer().getLastName());
+        detailDto.setCustomerEmail(order.getCustomer().getEmail());
+    }
+
+    private static ServiceHistoryDetailDto getServiceHistoryDetailDto(Order order) {
+        ServiceHistoryDetailDto detailDto = new ServiceHistoryDetailDto();
+        detailDto.setOrderId(order.getId());
+        detailDto.setDescription(order.getDescription());
+        detailDto.setProposedPrice(order.getProposedPrice());
+        detailDto.setStartDate(order.getStartDate());
+        detailDto.setCreatedAt(order.getCreateDate());
+        detailDto.setAddress(order.getAddress());
+        detailDto.setStatus(order.getStatus());
+        return detailDto;
+    }
+
     @Override
     @Transactional
     public Page<OrderResponseDto> getOrderHistory(String email, Pageable Page) {
@@ -343,5 +337,9 @@ public class OrderServiceImpl implements OrderService {
           Page<Order> order = orderRepository.findByCustomerAndStatus( customer, status, pageable);
           return order.map(OrderMapper::toResponseDto);
     }
+    //clean code
+    //validation controller
+    //format jason
+    //exption handler//pageable
 
 }

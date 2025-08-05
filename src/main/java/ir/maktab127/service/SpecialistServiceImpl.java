@@ -1,29 +1,22 @@
 package ir.maktab127.service;
 
 import ir.maktab127.dto.SpecialistUpdateDto;
-import ir.maktab127.entity.Order;
-import ir.maktab127.entity.OrderStatus;
-import ir.maktab127.entity.Proposal;
-import ir.maktab127.entity.Wallet;
+import ir.maktab127.entity.*;
 import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Role;
 import ir.maktab127.entity.user.Specialist;
-import ir.maktab127.repository.OrderRepository;
-import ir.maktab127.repository.ProposalRepository;
-import ir.maktab127.repository.SpecialistRepository;
-import ir.maktab127.repository.WalletRepository;
+import ir.maktab127.repository.*;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.*;
 
 @Service
@@ -39,6 +32,7 @@ public class SpecialistServiceImpl implements SpecialistService {
     private final WalletRepository walletRepository;
     private final   EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final WalletTransactionRepository walletTransactionRepository;
 
 
     @Transactional
@@ -59,7 +53,17 @@ public class SpecialistServiceImpl implements SpecialistService {
 
         // Send verification email
         emailService.sendVerificationEmail(savedSpecialist.getEmail(), savedSpecialist.getEmailVerificationToken());
+        Wallet wallet = new Wallet();
+        wallet.setUser(specialist);
+        wallet.setBalance(BigDecimal.ZERO);
+        walletRepository.save(wallet);
+        WalletTransaction walletTransaction=new WalletTransaction();
+        walletTransaction.setWallet(wallet);
+        walletTransaction.setAmount(BigDecimal.ZERO);
+        walletTransaction.setDescription("initial balance");
+        walletTransactionRepository.save(walletTransaction);
 
+        specialist.setWallet(wallet);
         return savedSpecialist;
     }
     @Transactional
@@ -76,19 +80,20 @@ public class SpecialistServiceImpl implements SpecialistService {
         specialistRepository.save(specialist);
     }
     @Transactional
-    public Specialist updateProfileImage(Long id, String base64Image) {
+    public void updateProfileImage(Long id, String base64Image) {
         Specialist specialist = specialistRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Specialist not found"));
         specialist.setProfileImage(base64Image);
         updateSpecialistStatus(specialist);
-        return specialistRepository.save(specialist);
+        specialistRepository.save(specialist);
     }
 
     private void updateSpecialistStatus(Specialist specialist) {
-        if (specialist.isEmailVerified() && specialist.getProfileImage() != null) {
+        if (specialist.isEmailVerified() && specialist.getProfileImage() != null && !specialist.getProfileImage().isBlank()) {
             specialist.setStatus(AccountStatus.PENDING);
-        }else {
-            throw new RuntimeException("Email not verified or profile image not uploaded");
+        }
+        else {
+            specialist.setStatus(AccountStatus.NEW);
         }
     }
 
@@ -103,19 +108,15 @@ public class SpecialistServiceImpl implements SpecialistService {
     }
 
     @Override
-    public List<Specialist> getAll() {
-        return specialistRepository.findAll();
+    public Page<Specialist> getAll(Pageable page) {
+        return specialistRepository.findAll(page);
     }
 
     @Override
     public void delete(Long id) {
         specialistRepository.findById(id).ifPresent(specialistRepository::delete);
     }
-    @Override
-    public Optional<Specialist> login(String email, String password) {
-        return specialistRepository.findByEmail(email)
-                .filter(s -> s.getPassword().equals(password) && s.getStatus() == AccountStatus.APPROVED);
-    }
+
     @Transactional
     @Override
     public void updateInfo(Long specialistId, SpecialistUpdateDto dto) {
@@ -129,14 +130,13 @@ public class SpecialistServiceImpl implements SpecialistService {
             throw new IllegalStateException("Specialist has active work and cannot update info now.");
         }
 
-        specialist.setEmail(dto.getEmail());
         specialist.setPassword(dto.getPassword());
         specialist.setProfileImage(dto.getProfileImage());
 
         specialist.setStatus(AccountStatus.PENDING);
         specialistRepository.save(specialist);
     }
-
+    @Transactional
     @Override
     public Proposal submitProposal(Long specialistId, Long orderId, Proposal proposal) {
 
@@ -152,17 +152,16 @@ public class SpecialistServiceImpl implements SpecialistService {
     }
 
     @Override
-    public List<Order> getAvailableOrdersForSpecialist(Long specialistId) {
+    public Page<Order> getAvailableOrdersForSpecialist(Long specialistId, Pageable page) {
+        Specialist specialistOpt = specialistRepository.findById(specialistId).orElseThrow();
+        List<ServiceCategory> services=specialistOpt.getServiceCategories();
 
-        return orderRepository.findByStatusIn(List.of(
-
-                OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL
-        ));
+        return orderRepository.getAvailableOrdersForSpecialist(specialistId, page);
     }
 
     @Override
-    public List<Proposal> getSpecialistProposals(Long specialistId) {
-        return proposalRepository.findBySpecialistId(specialistId);
+    public Page<Proposal> getSpecialistProposals(Long specialistId,Pageable page) {
+        return proposalRepository.findBySpecialistId(specialistId,page);
     }
 
     @Override

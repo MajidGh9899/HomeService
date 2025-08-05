@@ -26,6 +26,6 @@ public class Wallet extends BaseEntity<Long> {
 
 
     public void setUserId(Long id) {
-        this.user.setId(id);
+        this.user.setId(this.getId());
     }
 }

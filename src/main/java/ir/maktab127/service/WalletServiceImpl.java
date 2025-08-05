@@ -10,6 +10,8 @@ import ir.maktab127.repository.WalletRepository;
 import ir.maktab127.repository.WalletTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,10 +83,11 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public List<WalletTransaction> getTransactionsByUserId(Long userId) {
-        return walletRepository.findByUserId(userId)
-                .map(wallet -> walletTransactionRepository.findByWalletId(wallet.getId()))
-                .orElse(java.util.Collections.emptyList());
+    public Page<WalletTransaction> getTransactionsByUserId(Long userId, Pageable page) {
+        Wallet walletByUserId = walletRepository.findByUserId(userId).orElseThrow();
+        return walletTransactionRepository.findByWalletId(walletByUserId.getId(),page);
+
+
     }
 
     @Transactional
@@ -136,6 +139,11 @@ public class WalletServiceImpl implements WalletService {
 
         wallet.setBalance(wallet.getBalance().add(paymentRequest.getAmount()));
         walletRepository.save(wallet);
+        WalletTransaction wt=new WalletTransaction();
+        wt.setWallet(wallet);
+        wt.setAmount(paymentRequest.getAmount());
+        wt.setDescription("payment InCREASE");
+        walletTransactionRepository.save(wt);
         paymentRequest.setUsed(true);
         paymentRepository.save(paymentRequest);
 

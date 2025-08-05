@@ -10,6 +10,8 @@ import ir.maktab127.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.springframework.security.authorization.AuthorityReactiveAuthorizationManager.hasRole;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -46,69 +50,68 @@ public class CustomerController {
 
 
     //
-    @PutMapping("/{id}/update-info")
-    public ResponseEntity<Void> updateInfo(@PathVariable Long id, @Valid @RequestBody CustomerUpdateDto dto) {
-        customerService.updateInfo(id, dto);
-        return ResponseEntity.ok().build();
+    @PutMapping("/update-info")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponseDto> updateInfo( @Valid @RequestBody CustomerUpdateDto dto) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+
+        customerService.updateInfo(email, dto);
+        return ResponseEntity.ok(new ApiResponseDto( "Update Customer successfully.",true));
     }
-    //
+
     @GetMapping("/service-categories")
-    public List<ServiceCategoryResponseDto> getAllServiceCategories() {
-        return serviceCategoryService.getAll().stream()
-                .map(ServiceCategoryMapper::toResponseDto)
-                .collect(Collectors.toList());
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public Page<ServiceCategoryResponseDto> getAllServiceCategories(@RequestParam(defaultValue = "1") int page,
+                                                                    @RequestParam(defaultValue = "1") int size,
+                                                                    @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        Page<ServiceCategory> allServices = serviceCategoryService.getAll(pageable);
+        return allServices.map(ServiceCategoryMapper::toResponseDto);
     }
 
     //order
     @PostMapping("/add-Order")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<OrderResponseDto> registerOrder(@Valid @RequestBody OrderRegisterDto dto) {
         try {
+            String email=SecurityContextHolder.getContext().getAuthentication().getName();
+            Customer customer = customerService.findByEmail(email).orElseThrow();
+            dto.setCustomerId(customer.getId());
             Order order = orderService.registerOrder(dto);
             return ResponseEntity.ok(OrderMapper.toResponseDto(order));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
-    //payOrder
-    @PutMapping("pay/{orderId}/{SpecialistId}")
-    public ResponseEntity<Void> payOrder(@PathVariable Long orderId, @PathVariable Long SpecialistId) {
-        try {
-            orderService.completedOrder(orderId);
-            orderService.payToSpecialist(orderId, SpecialistId);
-            return ResponseEntity.ok().build();
 
 
-        }catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-    //addComment
-    @PostMapping("/register/{orderId}")
-    public ResponseEntity<CommentResponseDto> registerComment(
-            @PathVariable Long orderId,
-            @Valid @RequestBody CommentRegisterDto dto) {
-        try {
-            Comment comment = commentService.registerComment(dto, orderId);
-            return ResponseEntity.ok(CommentMapper.toResponseDto(comment));
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            return ResponseEntity.status(409).build();
-        }
-    }
 // customer phase -2
 
     // مشاهده لیست پیشنهادهای سفارش با مرتب‌سازی
-    @GetMapping("/{customerId}/orders/{orderId}/proposals")
-    public ResponseEntity<List<ProposalResponseDto>> getOrderProposals(
-            @PathVariable Long customerId,
+    @GetMapping("/orders/{orderId}/proposals")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<Page<ProposalResponseDto>> getOrderProposals(
             @PathVariable Long orderId,
-            @RequestParam(defaultValue = "price") String sortBy) {
+            @RequestParam(defaultValue = "price") String sortBy,@RequestParam(defaultValue = "1") int page,
+    @RequestParam(defaultValue = "1") int size,
+    @RequestParam(required = false) String sort) {
+        Pageable pageable = PageRequest.of(page-1, size);
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer=customerService.findByEmail(email).orElseThrow();
         // بررسی مالکیت سفارش
         Optional<Order> orderOpt = orderService.findById(orderId);
-        if (orderOpt.isEmpty() || !orderOpt.get().getCustomer().getId().equals(customerId)) {
+        if (orderOpt.isEmpty() || !orderOpt.get().getCustomer().getId().equals(customer.getId())) {
             return ResponseEntity.notFound().build();
         }
         List<Proposal> proposals = proposalService.getProposalsByOrder(orderId);
         // مرتب‌سازی
+        sortProposlList(sortBy, proposals);
+        List<ProposalResponseDto> dtos = proposals.stream().map(ProposalMapper::toResponseDto).toList();
+        Page<ProposalResponseDto> result=new PageImpl<>(dtos,pageable,dtos.size());
+        return ResponseEntity.ok(result);
+    }
+
+    private static void sortProposlList(String sortBy, List<Proposal> proposals) {
         if (sortBy.equalsIgnoreCase("price")) {
             proposals.sort((a, b) -> a.getProposedPrice().compareTo(b.getProposedPrice()));
         } else if (sortBy.equalsIgnoreCase("specialistRating")) {
@@ -119,16 +122,17 @@ public class CustomerController {
                 return r2.compareTo(r1); // نزولی
             });
         }
-        List<ProposalResponseDto> dtos = proposals.stream().map(ProposalMapper::toResponseDto).toList();
-        return ResponseEntity.ok(dtos);
     }
 
     // انتخاب متخصص برای سفارش
-    @PostMapping("/{customerId}/orders/{orderId}/select-proposal/{proposalId}")
-    public ResponseEntity<Void> selectProposal(
-            @PathVariable Long customerId,
+    @PostMapping("/orders/{orderId}/select-proposal/{proposalId}")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponseDto> selectProposal(
+
             @PathVariable Long orderId,
             @PathVariable Long proposalId) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer=customerService.findByEmail(email).orElseThrow();
         Optional<Order> orderOpt = orderService.findById(orderId);
         Optional<Proposal> proposalOpt = proposalService.findById(proposalId);
         if (orderOpt.isEmpty() || proposalOpt.isEmpty()) {
@@ -136,7 +140,7 @@ public class CustomerController {
         }
         Order order = orderOpt.get();
         Proposal proposal = proposalOpt.get();
-        if (!order.getCustomer().getId().equals(customerId) || !proposal.getOrder().getId().equals(orderId)) {
+        if (!order.getCustomer().getId().equals(customer.getId()) || !proposal.getOrder().getId().equals(orderId)) {
             return ResponseEntity.badRequest().build();
         }
         // تغییر وضعیت سفارش
@@ -152,20 +156,22 @@ public class CustomerController {
                     p.setStatus(ProposalStatus.REJECTED);
                     proposalService.save(p);
                 });
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponseDto("Proposal"+proposalId+" selected successfully",true));
     }
 
     // اعلام شروع کار توسط مشتری
-    @PostMapping("/{customerId}/orders/{orderId}/start")
-    public ResponseEntity<Void> startOrder(
-            @PathVariable Long customerId,
-            @PathVariable Long orderId,
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime now) {
+    @PostMapping("/orders/{orderId}/start")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponseDto> startOrder(
+            @PathVariable Long orderId
+            ) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer=customerService.findByEmail(email).orElseThrow();
         Optional<Order> orderOpt = orderService.findById(orderId);
         if (orderOpt.isEmpty())
             return ResponseEntity.notFound().build();
         Order order = orderOpt.get();
-        if (!order.getCustomer().getId().equals(customerId))
+        if (!order.getCustomer().getId().equals(customer.getId()))
             return ResponseEntity.badRequest().build();
         if (order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL)
             return ResponseEntity.badRequest().build();
@@ -177,33 +183,39 @@ public class CustomerController {
             return ResponseEntity.badRequest().build();
 //         فقط بعد از زمان پیشنهادی متخصص
 
-        if (now.isBefore(acceptedProposal.getProposedStartTime()))
+        if (LocalDateTime.now().isBefore(acceptedProposal.getProposedStartTime()))
             return ResponseEntity.badRequest().build();
         order.setStatus(OrderStatus.IN_PROGRESS);
         orderService.save(order);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponseDto("Order started successfully",true));
     }
 
 
-    @PostMapping("/{customerId}/orders/{orderId}/complete")
-    public ResponseEntity<Void> completeOrder(
-            @PathVariable Long customerId,
+    @PostMapping("/orders/{orderId}/complete")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponseDto> completeOrder(
             @PathVariable Long orderId) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer=customerService.findByEmail(email).orElseThrow();
         Optional<Order> orderOpt = orderService.findById(orderId);
         if (orderOpt.isEmpty()) return ResponseEntity.notFound().build();
         Order order = orderOpt.get();
-        if (!order.getCustomer().getId().equals(customerId))
+        if (!order.getCustomer().getId().equals(customer.getId()))
             return ResponseEntity.badRequest().build();
         if (order.getStatus() != OrderStatus.IN_PROGRESS)
             return ResponseEntity.badRequest().build();
         order.setStatus(OrderStatus.COMPLETED);
         orderService.save(order);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponseDto("order completed",true));
     }
 
     //
-    @PostMapping("/{customerId}/orders/{orderId}/pay")
-    public ResponseEntity<Void> payOrder(@PathVariable Long customerId, @PathVariable Long orderId, @RequestBody PaymentRequestDto paymentRequest) {
+    @PostMapping("/orders/{orderId}/pay")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<Void> payOrder( @PathVariable Long orderId, @RequestBody PaymentRequestDto paymentRequest) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer=customerService.findByEmail(email).orElseThrow();
+        paymentRequest.setCustomerId(customer.getId());
         try {
             orderService.payOrder(orderId, paymentRequest);
             return ResponseEntity.ok().build();
@@ -212,11 +224,13 @@ public class CustomerController {
         }
     }
 
-    @PostMapping("/{customerId}/orders/{orderId}/comment")
-    public ResponseEntity<Void> addComment(@PathVariable Long customerId, @PathVariable Long orderId, @RequestBody CommentRegisterDto dto) {
+    @PostMapping("/orders/{orderId}/comment")
+    public ResponseEntity<ApiResponseDto> addComment( @PathVariable Long orderId, @RequestBody CommentRegisterDto dto) {
+        String email=SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer=customerService.findByEmail(email).orElseThrow();
         // اعتبارسنجی مالکیت سفارش و وضعیت سفارش
         Optional<Order> orderOpt = orderService.findById(orderId);
-        if (orderOpt.isEmpty() || !orderOpt.get().getCustomer().getId().equals(customerId)) {
+        if (orderOpt.isEmpty() || !orderOpt.get().getCustomer().getId().equals(customer.getId())) {
             return ResponseEntity.notFound().build();
         }
         Order order = orderOpt.get();
@@ -224,14 +238,13 @@ public class CustomerController {
             return ResponseEntity.badRequest().build();
         }
         // ثبت نظر
-        Comment comment = new Comment(5L);
+        Comment comment = new Comment();
         comment.setCustomer(order.getCustomer());
         comment.setSpecialist(dto.getSpecialistId() != null ? new Specialist() {{ setId(dto.getSpecialistId()); }} : null);
         comment.setRating(dto.getRating());
         comment.setText(dto.getText());
-        comment.setCreatedAt(java.time.LocalDateTime.now());
         commentService.save(comment);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponseDto("Comment added successfully",true));
     }
     @GetMapping("/balance")
   @PreAuthorize("hasRole('CUSTOMER')")

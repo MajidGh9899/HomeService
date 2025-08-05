@@ -1,9 +1,7 @@
 package ir.maktab127.entity.user;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PostLoad;
+import ir.maktab127.entity.Wallet;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +16,10 @@ import java.util.Set;
 @DiscriminatorValue("customer")
 
 public class Customer extends User{
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Wallet wallet;
+
 
     @Column
     private String emailVerificationToken;

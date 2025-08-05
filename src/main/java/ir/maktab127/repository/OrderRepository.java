@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import ir.maktab127.entity.OrderStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,7 +18,12 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
     List<Order> findByStatus(OrderStatus status);
-    List<Order> findByStatusIn(List<OrderStatus> statuses);
+    @Query("SELECT o FROM Order o " +
+            "WHERE o.service IN (SELECT sc FROM Specialist s JOIN s.serviceCategories sc WHERE s.id = :specialistId) " +
+            "AND o.status = ir.maktab127.entity.OrderStatus.WAITING_FOR_PROPOSAL")
+    Page<Order> getAvailableOrdersForSpecialist(@Param("specialistId") Long specialistId, Pageable pageable);
+
+
 
     @Query("SELECT o FROM Order o WHERE o.service.id = :serviceCategoryId")
     List<Order> findByServiceCategoryId(@Param("serviceCategoryId") Long serviceCategoryId);

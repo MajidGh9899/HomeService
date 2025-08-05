@@ -16,11 +16,6 @@ public class CustomerUpdateDto {
     @NotBlank
     private String lastName;
 
-    @Email
-    @NotBlank
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
-            message = "Invalid email format")
-    private String email;
 
     @NotBlank
     @Size(min = 8)

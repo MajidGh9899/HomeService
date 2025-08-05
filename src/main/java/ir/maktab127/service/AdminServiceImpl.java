@@ -12,6 +12,8 @@ import ir.maktab127.repository.AdminRepository;
 import ir.maktab127.repository.CustomerRepository;
 import ir.maktab127.repository.ServiceCategoryRepository;
 import ir.maktab127.repository.SpecialistRepository;
+import ir.maktab127.repository.specification.CustomerSpecification;
+import ir.maktab127.repository.specification.SpecialistSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -41,7 +43,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public Optional<Admin> findByEmail(String email) { return adminRepository.findByEmail(email); }
     @Override
-    public List<Admin> getAll() { return adminRepository.findAll(); }
+    public Page<Admin> getAll(Pageable page) { return  adminRepository.findAll(page); }
 
     @Transactional
     @Override
@@ -57,10 +59,9 @@ public class AdminServiceImpl implements AdminService {
 
     }
     @Override
-    public List<Specialist> getPendingSpecialists() {
-        return specialistRepository.findAll().stream()
-                .filter(s -> s.getStatus() == AccountStatus.NEW || s.getStatus() == AccountStatus.PENDING)
-                .toList();
+    public Page<Specialist> getPendingSpecialists(  Pageable page) {
+        return  specialistRepository.findByStatus(AccountStatus.PENDING, page);
+
     }
     @Override
     public void addSpecialistToServiceCategory(Long specialistId, Long serviceCategoryId) {
@@ -84,64 +85,70 @@ public class AdminServiceImpl implements AdminService {
     public Page<UserResponseDto> searchUsers(UserSearchFilterDto filter, Pageable pageable) {
         List<UserResponseDto> result = new ArrayList<>();
 
+        // جست‌وجوی متخصص‌ها
         if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("SPECIALIST")) {
-            Page<Specialist> specialists =  specialistRepository.searchWithFilters(
-                    filter.getFirstName(),
-                    filter.getLastName(),
-                    filter.getServiceName(),
-                    filter.getMinScore(),
-                    filter.getMaxScore(),
-                    pageable
-
-            );
-
-
-
-            result.addAll(specialists.stream().map(s -> {
-                UserResponseDto dto = new UserResponseDto();
-                dto.setId(s.getId());
-                dto.setRole("SPECIALIST");
-                dto.setFirstName(s.getFirstName());
-                dto.setLastName(s.getLastName());
-                dto.setEmail(s.getEmail());
-                // rating not average
-                dto.setScore(s.getComments().stream().mapToInt(Comment::getRating).average().orElse(0));
-
-                if (s.getServiceCategories() != null && !s.getServiceCategories().isEmpty()) {
-                    dto.setServiceName(s.getServiceCategories().stream()
-                            .map(ServiceCategory::getName)
-                            .collect(Collectors.joining(", ")));
-                }
-
-                return dto;
-            }).toList());
+            specialistSearch(filter, pageable, result);
         }
 
+        // جست‌وجوی مشتریان
         if (filter.getRole() == null || filter.getRole().equalsIgnoreCase("CUSTOMER")) {
-            Page<Customer> customers = customerRepository.searchWithFilters(
-                    filter.getFirstName(),
-                    filter.getLastName(),
-                    pageable
-            );
-
-            result.addAll(customers.stream().map(c -> {
-                UserResponseDto dto = new UserResponseDto();
-                dto.setId(c.getId());
-                dto.setRole("CUSTOMER");
-                dto.setFirstName(c.getFirstName());
-                dto.setLastName(c.getLastName());
-                dto.setEmail(c.getEmail());
-                return dto;
-            }).toList());
+            customerSearch(filter, pageable, result);
         }
 
-        int pageSize = pageable.getPageSize();
-        int pageNumber = pageable.getPageNumber();
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageSize), result.size());
-        List<UserResponseDto> pagedResult = result.subList(start, end);
 
-        return new PageImpl<>(pagedResult, pageable, result.size());
+
+
+        return  new PageImpl<>(result, pageable, result.size());
+    }
+
+    private void specialistSearch(UserSearchFilterDto filter, Pageable pageable, List<UserResponseDto> result) {
+        Page<Specialist> specialists = specialistRepository.findAll(
+                SpecialistSpecification.searchWithFilters(
+                        filter.getFirstName(),
+                        filter.getLastName(),
+                        filter.getServiceName(),
+                        filter.getMinScore(),
+                        filter.getMaxScore()
+                ),
+                pageable
+        );
+
+        result.addAll(specialists.getContent().stream().map(s -> {
+            UserResponseDto dto = new UserResponseDto();
+            dto.setId(s.getId());
+            dto.setRole("SPECIALIST");
+            dto.setFirstName(s.getFirstName());
+            dto.setLastName(s.getLastName());
+            dto.setEmail(s.getEmail());
+            // محاسبه میانگین امتیاز
+            dto.setScore(s.getComments().stream().mapToInt(Comment::getRating).average().orElse(0));
+            if (s.getServiceCategories() != null && !s.getServiceCategories().isEmpty()) {
+                dto.setServiceName(s.getServiceCategories().stream()
+                        .map(ServiceCategory::getName)
+                        .collect(Collectors.joining(", ")));
+            }
+            return dto;
+        }).toList());
+    }
+
+    private void customerSearch(UserSearchFilterDto filter, Pageable pageable, List<UserResponseDto> result) {
+        Page<Customer> customers = customerRepository.findAll(
+                CustomerSpecification.searchWithFilters(
+                        filter.getFirstName(),
+                        filter.getLastName()
+                ),
+                pageable
+        );
+
+        result.addAll(customers.getContent().stream().map(c -> {
+            UserResponseDto dto = new UserResponseDto();
+            dto.setId(c.getId());
+            dto.setRole("CUSTOMER");
+            dto.setFirstName(c.getFirstName());
+            dto.setLastName(c.getLastName());
+            dto.setEmail(c.getEmail());
+            return dto;
+        }).toList());
     }
 
 }

@@ -9,11 +9,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CommentRegisterDto {
-    @NotNull
+
     private Long customerId;
-    @NotNull
+
     private Long specialistId;
-    @NotNull
+
     private Long orderId;
     @NotNull
     @Min(1) @Max(5)

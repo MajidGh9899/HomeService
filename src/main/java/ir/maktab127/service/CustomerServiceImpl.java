@@ -1,10 +1,14 @@
 package ir.maktab127.service;
 
 import ir.maktab127.dto.CustomerUpdateDto;
+import ir.maktab127.entity.Wallet;
+import ir.maktab127.entity.WalletTransaction;
 import ir.maktab127.entity.user.AccountStatus;
 import ir.maktab127.entity.user.Customer;
 import ir.maktab127.entity.user.Role;
 import ir.maktab127.repository.CustomerRepository;
+import ir.maktab127.repository.WalletRepository;
+import ir.maktab127.repository.WalletTransactionRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +17,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -23,10 +28,12 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
-    @Autowired
+
     private final CustomerRepository customerRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final WalletRepository walletRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
 
     @Override
     @Transactional
@@ -49,12 +56,12 @@ public class CustomerServiceImpl implements CustomerService {
     }
     @Override
     @Transactional
-    public void updateInfo(Long customerId, CustomerUpdateDto dto) {
-        Customer customer = customerRepository.findById(customerId)
+    public void updateInfo(String email, CustomerUpdateDto dto) {
+        Customer customer = customerRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
         customer.setFirstName(dto.getFirstName());
         customer.setLastName(dto.getLastName());
-        customer.setEmail(dto.getEmail());
+
         customer.setPassword(dto.getPassword());
         customerRepository.save(customer);
     }
@@ -77,9 +84,16 @@ public class CustomerServiceImpl implements CustomerService {
 
         // Send verification email
         emailService.sendVerificationEmail(savedCustomer.getEmail(), savedCustomer.getEmailVerificationToken());
-
-
-
+        Wallet wallet = new Wallet();
+        wallet.setUser(savedCustomer);
+        wallet.setBalance(BigDecimal.ZERO);
+        walletRepository.save(wallet);
+        savedCustomer.setWallet(wallet);
+        WalletTransaction walletTransaction=new WalletTransaction();
+        walletTransaction.setWallet(wallet);
+        walletTransaction.setAmount(BigDecimal.ZERO);
+        walletTransaction.setDescription("initial balance");
+        walletTransactionRepository.save(walletTransaction);
         return savedCustomer;
     }
     @Override
