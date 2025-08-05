@@ -13,17 +13,5 @@ public class Main {
 
     }
 }
-//commit
-//unit test
-//spring boot
-// valid date
-//regex password
-//query update info
-//image and validation
-//unige name
-//repeat field
-//pre_persist localdate
-// check date for proposal
-//valid price
-//customer -> start and complete time
+
 
