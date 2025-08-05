@@ -49,7 +49,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
 
     public void delete(Long id) { adminRepository.findById(id).ifPresent(adminRepository::delete); }
-
+    @Transactional
     @Override
     public void approveSpecialist(Long specialistId) {
         specialistRepository.findById(specialistId).ifPresent(specialist -> {

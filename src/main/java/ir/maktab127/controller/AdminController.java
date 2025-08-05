@@ -182,7 +182,7 @@ public class AdminController {
 
     @GetMapping("/service-history")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<OrderSummaryDTO>> getServiceHistorySummary(@Valid @RequestBody ServiceHistoryFilterDto filter,@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<Page<OrderSummaryDTO>> getServiceHistorySummary(@Valid @RequestBody ServiceHistoryFilterDto filter,@RequestParam(defaultValue = "1") int page,
     @RequestParam(defaultValue = "1") int size,
     @RequestParam(required = false) String sort){
         Pageable pageable = PageRequest.of(page-1, size);
