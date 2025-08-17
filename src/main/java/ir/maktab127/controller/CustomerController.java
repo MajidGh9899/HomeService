@@ -126,7 +126,7 @@ public class CustomerController {
     }
 
     // انتخاب متخصص برای سفارش
-    @PostMapping("/orders/{orderId}/select-proposal/{proposalId}/{specialistId}")
+    @PutMapping("/orders/{orderId}/select-proposal/{proposalId}/{specialistId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponseDto> selectProposal(
 
@@ -134,23 +134,11 @@ public class CustomerController {
             @PathVariable Long proposalId,
             @PathVariable Long specialistId) {
         String email=SecurityContextHolder.getContext().getAuthentication().getName();
-        Customer customer=customerService.findByEmail(email).orElseThrow();
-        Optional<Order> orderOpt = orderService.findById(orderId);
-        Optional<Proposal> proposalOpt = proposalService.findById(proposalId);
 
-        Order order = orderOpt.get();
-        Proposal proposal = proposalOpt.get();
+        Order order=orderService.selectProposal(orderId, proposalId, specialistId);
 
-        Specialist spec=specialistService.findById(specialistId).orElseThrow();
-        order.setSpecialist(spec);
-        // تغییر وضعیت سفارش
-        order.setStatus(OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL);
-        orderService.save(order);
-        // تغییر وضعیت پیشنهاد انتخاب‌شده
 
-        proposalService.updateProposalStatus(proposalId, ProposalStatus.ACCEPTED);
-
-        return ResponseEntity.ok(new ApiResponseDto("Proposal"+proposalId+" selected successfully",true));
+        return ResponseEntity.ok(new ApiResponseDto("Proposal"+proposalId+" selected for  successfully",true));
     }
 
     // اعلام شروع کار توسط مشتری
@@ -161,26 +149,26 @@ public class CustomerController {
             ) {
         String email=SecurityContextHolder.getContext().getAuthentication().getName();
         Customer customer=customerService.findByEmail(email).orElseThrow();
-        Optional<Order> orderOpt = orderService.findById(orderId);
-        if (orderOpt.isEmpty())
-            return ResponseEntity.notFound().build();
-        Order order = orderOpt.get();
-        if (!order.getCustomer().getId().equals(customer.getId()))
-            return ResponseEntity.badRequest().build();
-        if (order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL)
-            return ResponseEntity.badRequest().build();
-        // پیدا کردن پیشنهاد پذیرفته‌شده
-        Proposal acceptedProposal = proposalService.getProposalsByOrder(orderId).stream()
-                .filter(p -> p.getStatus() == ProposalStatus.ACCEPTED)
-                .findFirst().orElse(null);
-        if (acceptedProposal == null)
-            return ResponseEntity.badRequest().build();
-//         فقط بعد از زمان پیشنهادی متخصص
-
-        if (LocalDateTime.now().isBefore(acceptedProposal.getProposedStartTime()))
-            return ResponseEntity.badRequest().build();
-        order.setStatus(OrderStatus.IN_PROGRESS);
-        orderService.save(order);
+        Order order = orderService.startOrder(orderId, customer);
+//        Optional<Order> orderOpt = orderService.findById(orderId);
+//        if (orderOpt.isEmpty())
+//            return ResponseEntity.notFound().build();
+//        Order order = orderOpt.get();
+//        if (!order.getCustomer().getId().equals(customer.getId()))
+//            return ResponseEntity.badRequest().build();
+//        if (order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL)
+//            return ResponseEntity.badRequest().build();
+//        // پیدا کردن پیشنهاد پذیرفته‌شده
+//        Proposal acceptedProposal = proposalService.getProposalsByOrder(orderId).stream()
+//                .filter(p -> p.getStatus() == ProposalStatus.ACCEPTED)
+//                .findFirst().orElse(null);
+//
+////         فقط بعد از زمان پیشنهادی متخصص
+//
+//        if (LocalDateTime.now().isBefore(acceptedProposal.getProposedStartTime()))
+//            return ResponseEntity.badRequest().build();
+//        order.setStatus(OrderStatus.IN_PROGRESS);
+//        orderService.save(order);
         return ResponseEntity.ok(new ApiResponseDto("Order started successfully",true));
     }
 

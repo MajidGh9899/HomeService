@@ -14,7 +14,5 @@ public class PaymentRequestDto {
     private Long customerId;
 
 
-    public PaymentRequestDto(long l) {
-        this.customerId = l;
-    }
+
 }

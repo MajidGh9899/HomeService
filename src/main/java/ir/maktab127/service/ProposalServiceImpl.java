@@ -2,6 +2,7 @@ package ir.maktab127.service;
 
 import ir.maktab127.dto.ProposalRegisterDto;
 import ir.maktab127.entity.Order;
+import ir.maktab127.entity.OrderStatus;
 import ir.maktab127.entity.Proposal;
 import ir.maktab127.entity.ProposalStatus;
 import ir.maktab127.entity.user.Specialist;
@@ -68,6 +69,10 @@ public class ProposalServiceImpl implements ProposalService {
         if(dto.getEndDate().isBefore(dto.getStartDate()) ||dto.getStartDate().isBefore(order.getStartDate())
         ||dto.getEndDate().isBefore(order.getStartDate())){
             throw new IllegalStateException("Invalid start and end date");
+        }
+        if(order.getStatus()== OrderStatus.WAITING_FOR_PROPOSAL){
+            order.setStatus(OrderStatus.WAITING_FOR_SPECIALIST_SELECTION);
+            orderRepository.save(order);
         }
 
         Proposal proposal = new Proposal();

@@ -11,6 +11,7 @@ import ir.maktab127.dto.order.OrderSummaryDTO;
 import ir.maktab127.dto.payment.PaymentRequestDto;
 import ir.maktab127.entity.Order;
 import ir.maktab127.entity.OrderStatus;
+import ir.maktab127.entity.user.Customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -38,4 +39,8 @@ public interface OrderService {
 
     Page<OrderResponseDto> getOrderHistory(String email, Pageable pageable);
     Page<OrderResponseDto> getOrderHistoryByStatus(String email, OrderStatus status, Pageable pageable);
+
+    Order startOrder(Long orderId, Customer customer);
+
+    Order selectProposal(Long orderId, Long proposalId, Long specialistId);
 }

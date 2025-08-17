@@ -31,7 +31,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{token}")
-    @PreAuthorize("hasRole('CUSTOMER')")
+
     public String showPaymentPage(@PathVariable String token, Model model) {
         if (!walletService.isValidPaymentToken(token)) {
             throw new IllegalArgumentException("Invalid or expired token");

@@ -21,7 +21,7 @@ public class WalletController {
     private final WalletService walletService;
     private final CustomerService customerService;
 
-    @PostMapping("charge")
+    @PostMapping("/charge")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Map<String, String>> chargeWallet( @RequestBody WalletChargeRequestDto request) {
         String email= SecurityContextHolder.getContext().getAuthentication().getName();

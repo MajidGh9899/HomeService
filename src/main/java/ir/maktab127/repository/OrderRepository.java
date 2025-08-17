@@ -20,7 +20,8 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     List<Order> findByStatus(OrderStatus status);
     @Query("SELECT o FROM Order o " +
             "WHERE o.service IN (SELECT sc FROM Specialist s JOIN s.serviceCategories sc WHERE s.id = :specialistId) " +
-            "AND o.status = ir.maktab127.entity.OrderStatus.WAITING_FOR_PROPOSAL")
+            "AND o.status = ir.maktab127.entity.OrderStatus.WAITING_FOR_PROPOSAL " +
+            "OR o.status = ir.maktab127.entity.OrderStatus.WAITING_FOR_SPECIALIST_SELECTION")
     Page<Order> getAvailableOrdersForSpecialist(@Param("specialistId") Long specialistId, Pageable pageable);
 
 

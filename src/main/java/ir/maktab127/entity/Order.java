@@ -41,6 +41,8 @@ public class Order extends BaseEntity<Long> {
 
     @Column(name = proposed_price, nullable = false)
     private BigDecimal proposedPrice;
+    @OneToOne
+    private Proposal acceptedProposal;
 
     @Column(name = start_date, nullable = false)
     private LocalDateTime startDate;

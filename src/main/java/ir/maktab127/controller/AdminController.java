@@ -74,16 +74,16 @@ public class AdminController {
     }
     @PatchMapping("/approve-specialist/{specialistId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> approveSpecialist(@PathVariable Long specialistId) {
+    public ResponseEntity<ApiResponseDto> approveSpecialist(@PathVariable Long specialistId) {
         adminService.approveSpecialist(specialistId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponseDto("Specialist approved successfully", true));
     }
     @GetMapping("/pending-specialists")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<SpecialistResponseDto> getPendingSpecialists(@RequestParam(defaultValue = "0") int page,
+    public Page<SpecialistResponseDto> getPendingSpecialists(@RequestParam(defaultValue = "1") int page,
                                                              @RequestParam(defaultValue = "10") int size,
                                                              @RequestParam(required = false) String sort) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page-1, size);
         Page<Specialist> pendingList = adminService.getPendingSpecialists(pageable);
         return pendingList.map(SpecialistMapper::toResponseDto);
 
@@ -116,9 +116,9 @@ public class AdminController {
     // حذف خدمت
     @DeleteMapping("/delete-service-categories/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteServiceCategory(@PathVariable Long id) {
+    public ResponseEntity<ApiResponseDto> deleteServiceCategory(@PathVariable Long id) {
         serviceCategoryService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponseDto( "Your Service's delete Successfully.",true));
     }
 
     // مشاهده یک خدمت

@@ -34,7 +34,7 @@ public class Proposal extends BaseEntity<Long> {
 
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column
     private ProposalStatus status;
 
 

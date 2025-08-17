@@ -11,13 +11,14 @@ import ir.maktab127.exception.OrderException;
 import ir.maktab127.exception.WalletException;
 import ir.maktab127.repository.*;
 import ir.maktab127.repository.specification.OrderSpecification;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -336,6 +337,63 @@ public class OrderServiceImpl implements OrderService {
 
           Page<Order> order = orderRepository.findByCustomerAndStatus( customer, status, pageable);
           return order.map(OrderMapper::toResponseDto);
+    }
+
+    @Override
+    @Transactional
+    public Order startOrder(Long orderId, Customer customer) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow();
+
+        // Verify the order is in the correct state
+        if (order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL) {
+            throw new IllegalStateException("Order must be in WAITING_FOR_SPECIALIST_ARRIVAL status to start.");
+        }
+        if(order.getCustomer()!=customer){
+            throw new IllegalStateException("Customer must be the owner of the order to start.");
+        }
+
+
+        Proposal acceptedProposal = proposalService.getProposalsByOrder(orderId).stream()
+                .filter(p -> p.getStatus() == ProposalStatus.ACCEPTED).findFirst().orElseThrow();
+
+        // Verify the current time is after the proposed start time
+        LocalDateTime currentTime = LocalDateTime.now();
+        LocalDateTime proposedStartTime = acceptedProposal.getProposedStartTime();
+        if (currentTime.isBefore(proposedStartTime)) {
+            throw new IllegalStateException("Cannot start the order before the proposed start time: " + proposedStartTime);
+        }
+
+        // Update the order status to IN_PROGRess
+        order.setStatus(OrderStatus.IN_PROGRESS);
+        return orderRepository.save(order);
+    }
+    @Transactional
+    @Override
+    public Order selectProposal(Long orderId, Long proposalId, Long specialistId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow();
+
+
+
+        // Verify the order is in the correct state
+        if (order.getStatus() != OrderStatus.WAITING_FOR_SPECIALIST_SELECTION) {
+            throw new IllegalStateException("Order must be in WAITING_FOR_SPECIALIST_SELECTION status to select a proposal.");
+        }
+
+
+
+
+
+        // Update the proposal status
+        proposalService.updateProposalStatus(proposalId, ProposalStatus.ACCEPTED);
+
+        Proposal proposal = proposalService.findById(proposalId).orElseThrow();
+        // Update the order
+        order.setAcceptedProposal(proposal);
+        order.setSpecialist(specialistRepository.findById(specialistId).orElseThrow());
+        order.setStatus(OrderStatus.WAITING_FOR_SPECIALIST_ARRIVAL);
+        return orderRepository.save(order);
     }
     //clean code
     //validation controller

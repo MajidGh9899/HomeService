@@ -146,6 +146,11 @@ public class SpecialistServiceImpl implements SpecialistService {
 
 
         proposal.setCreateDate(LocalDateTime.now());
+        if(proposal.getOrder().getStatus()==OrderStatus.WAITING_FOR_PROPOSAL){
+            proposal.getOrder().setStatus(OrderStatus.WAITING_FOR_SPECIALIST_SELECTION);
+            orderRepository.save(proposal.getOrder());
+        }
+
 
 
         return proposalRepository.save(proposal);

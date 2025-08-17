@@ -78,7 +78,7 @@ public class WebConfigSecurity {
                         .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/orders/**").hasAnyRole( "SPECIALIST", "CUSTOMER")
                         .requestMatchers("/api/wallet/**").hasAnyRole("ADMIN", "SPECIALIST", "CUSTOMER")
-                        .requestMatchers("/pay/**").hasRole(  "CUSTOMER")
+                        .requestMatchers("/pay/**").permitAll()
 
                         .anyRequest().authenticated()
                 );
